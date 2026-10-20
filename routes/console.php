@@ -1,0 +1,2 @@
+<?php
+// Framework command routes.

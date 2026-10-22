@@ -1,4 +1,6 @@
-# FastFind — Security model and future development
+# Historical baseline security model and roadmap
+
+This document is preserved from the imported application and describes its original limitations. For the current platform, use [SECURITY](SECURITY.md), [KNOWN_LIMITATIONS](KNOWN_LIMITATIONS.md), [CHANGELOG](CHANGELOG.md) and [executed checks](TEST_EXECUTION_REPORT.md). Counts and future-work statements below are historical.
 
 ## Threat boundaries
 

@@ -1,0 +1,7 @@
+{
+  "id": "minimalist",
+  "name": "FastFind Minimalist",
+  "version": "1.0.0",
+  "description": "Quiet typography, restrained borders and a focused reading column.",
+  "defaults": {"accent": "#33564b", "font": "serif", "width": "normal"}
+}

@@ -1,18 +1,60 @@
 name: FastFind CI
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
-  test:
+  backend:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, dom, fileinfo, gd, mbstring, pdo_sqlite, sodium, xml, zip
+          coverage: none
+      - run: cp .env.example .env
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer validate --strict
+      - run: composer check-platform-reqs
+      - run: composer audit --locked
+      - run: php artisan test --compact
+      - run: php scripts/verify-migrations.php
+  frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
-          extensions: mbstring, pdo_sqlite, xml, dom
+          php-version: '8.3'
+          extensions: curl, dom, fileinfo, gd, mbstring, pdo_sqlite, sodium, xml, zip
           coverage: none
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+      - run: cp .env.example .env
       - run: composer install --no-interaction --prefer-dist
-      - run: php artisan test
-      - run: npm install && npm run build
+      - run: npm ci
+      - run: npm audit --audit-level=moderate
+      - run: npm run test:coverage
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failure-report
+          path: |
+            playwright-report/
+            test-results/
+            storage/framework/testing/run-*/logs/*.log
+          retention-days: 7
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t fastfind-dev .
+      - run: docker run --rm -v "$PWD:/app" fastfind-dev composer check-platform-reqs --lock

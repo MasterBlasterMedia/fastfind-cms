@@ -11,7 +11,7 @@ final class SessionController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
-        return response()->json(['user' => $request->user()?->only(['id', 'name', 'email', 'role', 'is_active'])]);
+        return response()->json(['user' => $request->user()?->only(['id', 'name', 'email', 'role', 'is_active']), 'csrf_token' => csrf_token()]);
     }
 
     public function login(Request $request): JsonResponse

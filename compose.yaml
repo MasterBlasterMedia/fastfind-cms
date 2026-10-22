@@ -8,4 +8,29 @@ services:
     working_dir: /app
     env_file:
       - .env
+    environment:
+      APP_URL: http://127.0.0.1:8000
+      DB_DATABASE: /app/database/database.sqlite
     restart: unless-stopped
+  scheduler:
+    build: .
+    profiles: [scheduler]
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - .:/app
+    working_dir: /app
+    env_file:
+      - .env
+    environment:
+      DB_DATABASE: /app/database/database.sqlite
+    restart: unless-stopped
+  node:
+    image: node:22-bookworm-slim
+    profiles: [tools]
+    working_dir: /app
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    command: ["npm", "run", "build"]
+volumes:
+  node_modules:

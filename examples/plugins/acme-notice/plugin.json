@@ -1,0 +1,10 @@
+{
+  "id": "acme/notice",
+  "name": "Acme Notice",
+  "version": "1.0.0",
+  "description": "SDK example: a validated custom notice block with an escaped Vue renderer.",
+  "entry": "plugin.php",
+  "requires": {"fastfind": "^1.0", "php": "^8.3"},
+  "permissions": ["content.extend"],
+  "dependencies": {}
+}

@@ -1,0 +1,10 @@
+{
+  "id": "fastfind/seo",
+  "name": "FastFind SEO",
+  "version": "1.0.0",
+  "description": "Published page metadata, social cards, structured data, XML sitemaps and reviewed redirects through the public FastFind SDK.",
+  "entry": "plugin.php",
+  "requires": {"fastfind": "^1.0", "php": "^8.3"},
+  "permissions": ["pages.read", "pages.write", "settings.manage", "public.routes"],
+  "dependencies": {}
+}

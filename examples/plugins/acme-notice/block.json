@@ -1,0 +1,6 @@
+{
+  "id": "acme/notice/notice",
+  "label": "Acme notice",
+  "defaults": {"text": "An independent plugin block"},
+  "fields": [{"key": "text", "label": "Notice", "type": "text", "required": true, "max": 200}]
+}

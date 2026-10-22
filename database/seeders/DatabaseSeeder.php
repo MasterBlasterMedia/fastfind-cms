@@ -36,5 +36,6 @@ class DatabaseSeeder extends Seeder
             $page = Page::create(['title' => $title, 'slug' => $slug, 'published_slug' => $slug, 'summary' => $summary, 'status' => 'published', 'document' => $document, 'published_snapshot' => $snapshot, 'published_search_text' => mb_strtolower(implode(' ', array_merge([$title, $summary], array_map(fn ($p) => implode(' ', array_filter($p[1], 'is_string')), $items)))), 'published_at' => now()]);
             $page->revisions()->create(['version' => 1, 'snapshot' => $page->only(['title', 'slug', 'summary', 'seo_title', 'seo_description', 'show_in_search', 'document'])]);
         }
+        $this->call(BuilderDemoSeeder::class);
     }
 }

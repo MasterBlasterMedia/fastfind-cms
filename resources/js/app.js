@@ -1,19 +1,18 @@
 import { createApp } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import App from './App.vue';
-import Home from './views/Home.vue';
-import Page from './views/Page.vue';
-import Search from './views/Search.vue';
-import Studio from './views/Studio.vue';
-import Editor from './views/Editor.vue';
 
 const router = createRouter({ history: createWebHistory(), routes: [
-  { path: '/', component: Home },
-  { path: '/p/:slug', component: Page },
-  { path: '/search', component: Search },
-  { path: '/studio/pages/:id', component: Editor },
-  { path: '/studio/:section?', component: Studio },
-  { path: '/:pathMatch(.*)*', redirect: '/' },
+  { path: '/', component: () => import('./views/Home.vue') },
+  { path: '/p/:slug', component: () => import('./views/Page.vue') },
+  { path: '/search', component: () => import('./views/Search.vue') },
+  { path: '/studio/pages/:id', component: () => import('./views/Editor.vue') },
+  { path: '/studio/plugins', component: () => import('./views/Plugins.vue') },
+  { path: '/studio/themes', component: () => import('./views/Themes.vue') },
+  { path: '/studio/health', component: () => import('./views/Health.vue') },
+  { path: '/studio/extensions/:vendor/:name/:view', component: () => import('./views/Extension.vue') },
+  { path: '/studio/:section?', component: () => import('./views/Studio.vue') },
+  { path: '/:pathMatch(.*)*', component: () => import('./views/NotFound.vue') },
 ], scrollBehavior: () => ({ top: 0 }) });
 
 createApp(App).use(router).mount('#app');

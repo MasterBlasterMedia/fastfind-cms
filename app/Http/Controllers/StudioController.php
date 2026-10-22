@@ -8,20 +8,39 @@ use App\Models\NavigationItem;
 use App\Models\Page;
 use App\Models\SiteSetting;
 use App\Models\User;
+use App\Events\PageChanged;
+use App\Http\Requests\SavePageRequest;
+use App\Services\ContentRegistry;
 use App\Services\DocumentSchema;
+use App\Services\MediaLibrary;
 use App\Services\PageWriter;
+use App\Services\SafeUrl;
+use App\Services\ThemeManager;
+use App\Services\UserManager;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 final class StudioController extends Controller
 {
+    public function contentSchema(ContentRegistry $registry): JsonResponse
+    {
+        app(\App\Plugins\PluginManager::class)->bootActive();
+        return response()->json($registry->catalog());
+    }
+
+    public function health(\App\Services\SystemHealth $health): JsonResponse
+    {
+        Gate::authorize('manage-users');
+        return response()->json($health->report())->header('Cache-Control', 'private, no-store');
+    }
+
     public function dashboard(): JsonResponse
     {
         return response()->json([
@@ -35,16 +54,18 @@ final class StudioController extends Controller
     public function pages(Request $request): JsonResponse
     {
         $status = $request->query('status');
-        $pages = Page::query()->when(in_array($status, ['draft', 'published'], true), fn ($q) => $q->where('status', $status))
-            ->orderByDesc('updated_at')->paginate(30, ['id', 'title', 'slug', 'published_slug', 'status', 'version', 'updated_at', 'published_at']);
+        $pages = Page::query()->when(in_array($status, ['draft', 'in_review', 'scheduled', 'published', 'archived'], true), fn ($q) => $q->where('status', $status))
+            ->orderByDesc('updated_at')->paginate(30, ['id', 'title', 'slug', 'published_slug', 'status', 'version', 'updated_at', 'published_at', 'scheduled_at']);
         return response()->json($pages);
     }
 
     public function create(Request $request, DocumentSchema $schema, PageWriter $writer): JsonResponse
     {
-        Gate::authorize('edit-content');
+        Gate::authorize('create', Page::class);
         $input = $request->validate(['title' => ['required', 'string', 'max:180']]);
-        $page = DB::transaction(function () use ($input, $request, $schema, $writer) {
+        for ($attempt = 0; $attempt < 3; $attempt++) {
+            try {
+                $page = DB::transaction(function () use ($input, $request, $schema, $writer) {
             $title = trim($input['title']);
             $root = Str::slug($title) ?: 'untitled';
             $slug = $root;
@@ -53,34 +74,26 @@ final class StudioController extends Controller
                 'document' => $schema->starter(), 'author_id' => $request->user()->id, 'updated_by' => $request->user()->id]);
             $writer->snapshot($page, $request->user()->id);
             AuditEvent::create(['user_id' => $request->user()->id, 'action' => 'page.created', 'subject' => 'page', 'subject_id' => $page->id]);
+            DB::afterCommit(fn () => PageChanged::dispatch($page, 'created'));
             return $page;
-        });
-        return response()->json(['page' => $page], 201);
+                }, 3);
+                return response()->json(['page' => $page], 201);
+            } catch (QueryException $exception) {
+                if (!in_array((string) $exception->getCode(), ['23000', '23505'], true)) throw $exception;
+            }
+        }
+        throw ValidationException::withMessages(['title' => 'Another page was created with this URL. Please try again.']);
     }
 
     public function show(Page $page): JsonResponse
     {
+        Gate::authorize('view', $page);
         return response()->json(['page' => $page]);
     }
 
-    private function pageRules(Page $page): array
+    public function update(SavePageRequest $request, Page $page, PageWriter $writer): JsonResponse
     {
-        return [
-            'version' => ['required', 'integer', 'min:1'],
-            'title' => ['required', 'string', 'max:180'],
-            'slug' => ['required', 'string', 'max:200', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('pages', 'slug')->ignore($page->id)],
-            'summary' => ['nullable', 'string', 'max:500'],
-            'seo_title' => ['nullable', 'string', 'max:180'],
-            'seo_description' => ['nullable', 'string', 'max:320'],
-            'show_in_search' => ['required', 'boolean'],
-            'document' => ['required', 'array'],
-        ];
-    }
-
-    public function update(Request $request, Page $page, PageWriter $writer): JsonResponse
-    {
-        Gate::authorize('edit-content');
-        $data = $request->validate($this->pageRules($page));
+        $data = $request->validated();
         $new = $writer->save($page, $data, (int) $data['version'], $request->user()->id);
         return response()->json(['page' => $new]);
     }
@@ -101,19 +114,53 @@ final class StudioController extends Controller
         return response()->json(['page' => $writer->changeState($page, 'unpublish', $request->user()->id, (int) $input['version'])]);
     }
 
-    public function delete(Request $request, Page $page): JsonResponse
+    public function delete(Request $request, Page $page, PageWriter $writer): JsonResponse
     {
-        Gate::authorize('edit-content');
-        DB::transaction(function () use ($request, $page) {
-            AuditEvent::create(['user_id' => $request->user()->id, 'action' => 'page.deleted', 'subject' => 'page', 'subject_id' => $page->id, 'context' => ['title' => $page->title]]);
-            $page->delete();
-        });
+        Gate::authorize('delete', $page);
+        $input = $request->validate(['version' => ['required', 'integer', 'min:1']]);
+        $writer->delete($page, (int) $input['version'], $request->user()->id);
         return response()->json(['ok' => true]);
     }
 
     public function revisions(Page $page): JsonResponse
     {
+        Gate::authorize('view', $page);
         return response()->json(['revisions' => $page->revisions()->orderByDesc('version')->limit(50)->get(['id', 'version', 'user_id', 'created_at'])]);
+    }
+
+    public function revision(Page $page, int $revisionVersion): JsonResponse
+    {
+        Gate::authorize('view', $page);
+        $revision = $page->revisions()->where('version', $revisionVersion)->firstOrFail();
+        $current = $page->only(['title', 'slug', 'summary', 'seo_title', 'seo_description', 'show_in_search', 'document', 'extensions']);
+        $changed = array_values(array_filter(array_keys($current), fn ($key) => ($revision->snapshot[$key] ?? null) !== $current[$key]));
+        return response()->json(['revision' => $revision, 'current' => $current, 'changed_fields' => $changed]);
+    }
+
+    public function schedule(Request $request, Page $page, PageWriter $writer): JsonResponse
+    {
+        Gate::authorize('publish', $page);
+        $input = $request->validate(['version' => ['required', 'integer', 'min:1'], 'scheduled_at' => ['required', 'date', 'after:now']]);
+        return response()->json(['page' => $writer->schedule($page, $input['scheduled_at'], (int) $input['version'], $request->user()->id)]);
+    }
+
+    public function review(Request $request, Page $page, PageWriter $writer): JsonResponse
+    {
+        $input = $request->validate(['version' => ['required', 'integer', 'min:1']]);
+        return response()->json(['page' => $writer->changeState($page, 'review', $request->user()->id, (int) $input['version'])]);
+    }
+
+    public function archive(Request $request, Page $page, PageWriter $writer): JsonResponse
+    {
+        $input = $request->validate(['version' => ['required', 'integer', 'min:1']]);
+        return response()->json(['page' => $writer->changeState($page, 'archive', $request->user()->id, (int) $input['version'])]);
+    }
+
+    public function previewLink(Page $page): JsonResponse
+    {
+        Gate::authorize('update', $page);
+        $expires = now()->addMinutes(30);
+        return response()->json(['url' => URL::temporarySignedRoute('pages.preview', $expires, ['page' => $page->id, 'version' => $page->version]), 'expires_at' => $expires->toIso8601String()]);
     }
 
     public function restore(Request $request, Page $page, PageWriter $writer): JsonResponse
@@ -132,14 +179,14 @@ final class StudioController extends Controller
     {
         Gate::authorize('manage-site');
         $data = $request->validate([
-            'items' => ['required', 'array', 'max:20'],
+            'items' => ['present', 'array', 'max:20'],
             'items.*.label' => ['required', 'string', 'max:90'],
             'items.*.url' => ['required', 'string', 'max:500'],
             'items.*.visible' => ['required', 'boolean'],
         ]);
         foreach ($data['items'] as $item) {
             $url = $item['url'];
-            if (!str_starts_with($url, '/') || str_starts_with($url, '//')) {
+            if (!SafeUrl::valid($url, localOnly: true)) {
                 throw ValidationException::withMessages(['items' => 'Navigation links must be relative to this site.']);
             }
         }
@@ -151,29 +198,26 @@ final class StudioController extends Controller
         return $this->navigation();
     }
 
-    public function media(): JsonResponse
+    public function media(Request $request): JsonResponse
     {
-        return response()->json(['media' => MediaAsset::latest()->limit(100)->get()]);
+        $input = $request->validate(['q' => ['nullable', 'string', 'max:100']]);
+        $query = MediaAsset::latest();
+        if (!empty($input['q'])) $query->where('filename', 'like', '%'.str_replace(['%', '_'], '', $input['q']).'%');
+        return response()->json(['media' => $query->limit(100)->get()]);
     }
 
-    public function upload(Request $request): JsonResponse
+    public function upload(Request $request, MediaLibrary $library): JsonResponse
     {
         Gate::authorize('edit-content');
         $input = $request->validate(['file' => ['required', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp,gif'], 'alt' => ['nullable', 'string', 'max:255']]);
-        $file = $input['file'];
-        $path = $file->store('images/'.date('Y/m'), 'public');
-        $asset = MediaAsset::create(['filename' => Str::limit($file->getClientOriginalName(), 240, ''),
-            'path' => $path, 'mime' => $file->getMimeType() ?? 'application/octet-stream',
-            'size' => $file->getSize(), 'alt' => $input['alt'] ?? '', 'uploaded_by' => $request->user()->id]);
+        $asset = $library->upload($input['file'], $input['alt'] ?? '', $request->user()->id);
         return response()->json(['asset' => $asset], 201);
     }
 
-    public function deleteMedia(Request $request, MediaAsset $asset): JsonResponse
+    public function deleteMedia(Request $request, MediaAsset $asset, MediaLibrary $library): JsonResponse
     {
         Gate::authorize('manage-site');
-        $path = $asset->path;
-        $asset->delete();
-        Storage::disk('public')->delete($path);
+        $library->delete($asset, $request->user()->id);
         return response()->json(['ok' => true]);
     }
 
@@ -211,18 +255,24 @@ final class StudioController extends Controller
         return response()->json(['user' => $user->only(['id', 'name', 'email', 'role'])], 201);
     }
 
-    public function updateUser(Request $request, User $user): JsonResponse
+    public function updateUser(Request $request, User $user, UserManager $manager): JsonResponse
     {
         Gate::authorize('manage-users');
         $data = $request->validate(['role' => ['required', Rule::in(['owner', 'admin', 'editor', 'viewer'])], 'is_active' => ['required', 'boolean']]);
-        if ($request->user()->is($user) && ($data['role'] !== 'owner' || !$data['is_active'])) {
-            throw ValidationException::withMessages(['role' => 'You cannot deactivate or demote your own owner account.']);
-        }
-        if ($user->role === 'owner' && ($data['role'] !== 'owner' || !$data['is_active']) && User::where('role', 'owner')->where('is_active', true)->count() <= 1) {
-            throw ValidationException::withMessages(['role' => 'There must be at least one active owner.']);
-        }
-        $user->update($data);
-        AuditEvent::create(['user_id' => $request->user()->id, 'action' => 'user.updated', 'subject' => 'user', 'subject_id' => $user->id]);
+        $user = $manager->update($request->user()->id, $user->id, $data);
         return response()->json(['user' => $user->only(['id', 'name', 'email', 'role', 'is_active'])]);
+    }
+
+    public function themes(ThemeManager $themes): JsonResponse
+    {
+        Gate::authorize('manage-site');
+        return response()->json(['themes' => $themes->all(), ...$themes->current()]);
+    }
+
+    public function saveTheme(Request $request, ThemeManager $themes): JsonResponse
+    {
+        Gate::authorize('manage-site');
+        $input = $request->validate(['id' => ['required', 'string'], 'settings' => ['sometimes', 'array']]);
+        return response()->json($themes->activate($input['id'], $input['settings'] ?? [], $request->user()->id));
     }
 }

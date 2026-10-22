@@ -1,0 +1,23 @@
+# Platform development changelog
+
+## feature/fastfind-platform — 2026-10-22
+
+Preserved imported source on `main` at `b23de67`; all development uses an isolated Git worktree. Added reproducible Composer/npm lockfiles, local runtime helpers, test runners, CI and development Docker support.
+
+### CMS and builder
+
+- Fixed model defaults/revision creation, post-login CSRF refresh, concurrent save response handling, stale delete/restore validation, owner demotion protection and URL normalization checks.
+- Added policies, strict shared catalog validation, 16 layouts/22 blocks, typed inspectors, native and keyboard reordering, duplication, undo/redo, responsive draft preview and seeded catalog demonstration.
+- Added scheduling/review/archive/signed preview/diff APIs, generic extension snapshots and after-commit events. Public results remain isolated from draft edits.
+- Added raster decode/re-encode, metadata stripping, dimensions/thumbnails and referenced-media deletion checks; improved ranked/paginated search.
+
+### Public extension system
+
+- Added Plugin/AbstractPlugin/PluginContext contracts, manifest validation, dependency/version checks, lifecycle locks, integrity verification, settings, route dispatch, events/tasks, fields and builder registration.
+- Added signed bounded ZIP staging, publisher trust configuration, Ed25519 packaging CLI, owner administration, local/remote metadata catalog and independent Acme Notice example.
+- Built FastFind SEO entirely through public plugin APIs: generic editor fields, plugin admin/settings, escaped published head metadata, schema data, sitemap and redirect management.
+- Added reviewed theme manifests and public tokens, Professional/Minimalist theme switching, owner system health, SQLite backups with verified disposable restoration.
+
+### Verification and documentation
+
+Backend feature/security tests, Vue component/operation tests, real browser workflows, responsive rendering/axe checks and migration roundtrips were added. See TEST_EXECUTION_REPORT.md for executed results and KNOWN_LIMITATIONS.md for incomplete requirements. The platform is not declared production-ready.

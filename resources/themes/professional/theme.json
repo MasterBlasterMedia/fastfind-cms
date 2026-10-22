@@ -1,0 +1,7 @@
+{
+  "id": "professional",
+  "name": "FastFind Professional",
+  "version": "1.0.0",
+  "description": "Warm surfaces, generous spacing and a confident editorial presence.",
+  "defaults": {"accent": "#3159d9", "font": "sans", "width": "wide"}
+}

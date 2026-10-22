@@ -3,8 +3,9 @@ import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { get } from '../lib';
 import ContentPage from '../components/ContentPage.vue';
+import { applyPageHead } from '../head';
 const route = useRoute(); const page = ref(null); const error = ref(''); const loading = ref(true);
-async function load() { loading.value=true; error.value=''; try { page.value=(await get('/pages/'+encodeURIComponent(route.params.slug))).page; document.title=(page.value.seo_title||page.value.title)+' | FastFind'; } catch { page.value=null; error.value='This page may have moved or is no longer available.'; } finally { loading.value=false; } }
+async function load() { loading.value=true; error.value=''; try { page.value=(await get('/pages/'+encodeURIComponent(route.params.slug))).page; applyPageHead(page.value.head, {title:page.value.title+' | FastFind',description:page.value.summary}); } catch { page.value=null; error.value='This page may have moved or is no longer available.'; applyPageHead({}, {title:'Page unavailable | FastFind'}); } finally { loading.value=false; } }
 onMounted(load); watch(() => route.params.slug, load);
 </script>
 <template>

@@ -1,6 +1,11 @@
 # Local installation and runtime
 
-The feature branch is in the separate `fastfind-platform` checkout. The original `fastfind` checkout remains the baseline. Run every command below from the feature checkout. This setup uses SQLite and a development server bound to loopback.
+Use the `feature/fastfind-platform` branch. The original development workspace keeps this in a separate `fastfind-platform` checkout and preserves the baseline in `fastfind`; a new clone does not need that directory arrangement. Run every command below from the cloned application directory. This setup uses SQLite and a development server bound to loopback.
+
+```sh
+git clone --branch feature/fastfind-platform https://github.com/MasterBlasterMedia/fastfind-cms.git
+cd fastfind-cms
+```
 
 ## Requirements
 

@@ -1,7 +1,8 @@
 <?php
 
 // Test server only. Never follow the development public/storage symlink.
-if (getenv('APP_ENV') !== 'testing' || !getenv('LARAVEL_STORAGE_PATH')) {
+$storageRoot = getenv('LARAVEL_STORAGE_PATH');
+if (getenv('APP_ENV') !== 'testing' || !$storageRoot) {
     http_response_code(500);
     exit('The isolated browser router requires a testing environment.');
 }
@@ -19,7 +20,7 @@ $within = static function (string $file, string $directory): bool {
         : str_starts_with($candidate, $prefix);
 };
 if ($uri === '/storage' || str_starts_with($uri, '/storage/')) {
-    $mediaRoot = realpath(getenv('LARAVEL_STORAGE_PATH').'/app/public');
+    $mediaRoot = realpath($storageRoot.'/app/public');
     $file = $mediaRoot ? realpath($mediaRoot.'/'.substr($uri, strlen('/storage/'))) : false;
     if (!$file || !$mediaRoot || !$within($file, $mediaRoot) || !is_file($file)) {
         http_response_code(404);
@@ -42,4 +43,10 @@ $asset = $publicRoot ? realpath($publicRoot.$uri) : false;
 if ($asset && $within($asset, $publicRoot) && is_file($asset) && strtolower(pathinfo($asset, PATHINFO_EXTENSION)) !== 'php') {
     return false;
 }
-require __DIR__.'/../public/index.php';
+define('LARAVEL_START', microtime(true));
+require __DIR__.'/../vendor/autoload.php';
+$app = require __DIR__.'/../bootstrap/app.php';
+// With variables_order=GPCS, the HTTP SAPI omits process variables from $_ENV/$_SERVER.
+// Bind the same explicit root used above before Laravel loads filesystem configuration.
+$app->useStoragePath($storageRoot);
+$app->handleRequest(\Illuminate\Http\Request::capture());

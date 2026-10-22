@@ -199,14 +199,22 @@ test('media upload displays decoded image and rejects executable content', async
   const png = Buffer.from(await page.evaluate(() => { const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1; canvas.getContext('2d').fillRect(0, 0, 1, 1); return canvas.toDataURL('image/png').split(',')[1]; }), 'base64');
   await page.locator('input[type=file]').setInputFiles({ name: 'browser-pixel.png', mimeType: 'image/png', buffer: png });
   await page.getByLabel('Image description').fill('Browser test pixel');
+  const imageResponse = page.waitForResponse(response => new URL(response.url()).pathname.startsWith('/storage/images/') && response.request().resourceType() === 'image');
   await page.getByRole('button', { name: 'Upload ↗' }).click();
   await expect(page.locator('.toast')).toContainText('File uploaded');
+  const response = await imageResponse;
+  expect(response.status(), 'Uploaded image must be served from the isolated media directory').toBe(200);
+  expect(response.headers()['content-type']).toMatch(/^image\/(png|webp)(;|$)/);
   const img = page.locator('.media-grid img').first();
   await expect(img).toHaveAttribute('alt', 'Browser test pixel');
-  expect(await img.evaluate(image => image.complete && image.naturalWidth === 1)).toBe(true);
+  await expect.poll(() => img.evaluate(image => ({ complete: image.complete, width: image.naturalWidth, height: image.naturalHeight }))).toEqual({ complete: true, width: 1, height: 1 });
   await page.locator('input[type=file]').setInputFiles({ name: 'bad.php', mimeType: 'application/x-httpd-php', buffer: Buffer.from('<?php echo "bad";') });
+  const rejectedUpload = page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/studio/media' && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Upload ↗' }).click();
-  await expect(page.locator('.toast')).toContainText(/type|image|file/i);
+  const rejection = await rejectedUpload;
+  expect(rejection.status()).toBe(422);
+  const validation = await rejection.json();
+  await expect(page.locator('.toast')).toContainText(validation.errors.file[0]);
   await expect(page.locator('.media-grid img')).toHaveCount(1);
 });
 

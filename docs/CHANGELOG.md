@@ -1,5 +1,11 @@
 # Platform development changelog
 
+## CI media isolation fix — 2026-10-22
+
+- Reproduced the GitHub Actions uploaded-image 404 with PHP `variables_order=GPCS`: the HTTP application used default storage while the test router served the isolated run storage.
+- Bound the test application's storage directory explicitly before bootstrapping its configuration and kept `GPCS` in the browser launcher to exercise this configuration on every run.
+- Strengthened browser assertions to require an HTTP 200 image response and decoded dimensions, and to await the rejected executable upload's HTTP 422 response and validation message.
+
 ## feature/fastfind-platform — 2026-10-22
 
 Preserved imported source on `main` at `b23de67`; all development uses an isolated Git worktree. Added reproducible Composer/npm lockfiles, local runtime helpers, test runners, CI and development Docker support.

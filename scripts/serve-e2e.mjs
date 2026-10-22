@@ -41,7 +41,8 @@ if (setup.error || setup.status !== 0) {
   process.exit(setup.status || 1);
 }
 // Direct PHP server: no orphaned artisan child process, no production database access.
-const server = spawn(php, ['-S', '127.0.0.1:8123', path.join(root, 'scripts/e2e-router.php')],
+// Exercise configurations without $_ENV so the router must bind the isolated storage explicitly.
+const server = spawn(php, ['-d', 'variables_order=GPCS', '-S', '127.0.0.1:8123', path.join(root, 'scripts/e2e-router.php')],
   { cwd: path.join(root, 'public'), env, stdio: ['ignore', log, log], windowsHide: true });
 closeSync(log);
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { server.kill(); process.exit(0); });

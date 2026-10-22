@@ -24,6 +24,8 @@ Coverage is intentionally scoped to `resources/js/builder` and the `Block`, `Sec
 
 Browser tests use the committed Playwright setup and disposable fixtures. Each run creates `storage/framework/testing/run-<UUID>` and sets it as Laravel's storage root, isolating its database, media, plugins, views, sessions, caches and logs. `scripts/setup-e2e.php` refuses to reuse an existing database and requires a new `e2e-*.sqlite` file inside that run's `framework/testing` directory with `APP_ENV=testing` and no database URL override. Its router serves `/storage` only from the run's own public media, without creating or changing the development media symlink. The fixture accounts are for those disposable tests only.
 
+The PHP HTTP server deliberately runs with `variables_order=GPCS`, which does not populate `$_ENV`. The test router binds Laravel's storage path explicitly from the validated run environment before loading application configuration. This keeps uploads and static media serving in the same run directory even when the HTTP SAPI does not expose process environment variables through `$_SERVER`. The media scenario requires an actual HTTP 200 image response, successful decoding, and a completed HTTP 422 response for the prohibited upload.
+
 The launcher prints its run directory and PHP log path. PHP setup output and request logs are captured in the run's `logs/php-server.log`, while Laravel logs stay in that same private run tree. These ignored run directories remain available for debugging. Browser traces and reports stay in ignored `test-results` and `playwright-report` directories. CI uploads logs and browser reports on failure, without uploading fixture databases or session files. See the final execution report for browser run results.
 
 ## CI

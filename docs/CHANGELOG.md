@@ -1,5 +1,10 @@
 # Platform development changelog
 
+## Mail dependency security update — 2026-10-29
+
+- Updated only `symfony/mime` from 7.4.19 to 7.4.22 after CI detected the revised CVE-2026-45070 advisory. Symfony confirms the previously advertised fix was not included in earlier releases; see its [release clarification](https://symfony.com/blog/about-the-security-entries-in-symfony-5-4-55-6-4-49-7-4-22-and-8-1-10).
+- Composer strict validation and the locked security audit passed. All 143 PHP tests and 13 browser scenarios passed again with the patched dependency, including real local reset-email rendering and media handling.
+
 ## Account password recovery — 2026-10-28
 
 - Added sign-in recovery and reset forms backed by Laravel's password broker, trusted configured link origins, hashed expiring tokens, rate limits and generic account lookup responses.

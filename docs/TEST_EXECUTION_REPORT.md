@@ -1,5 +1,11 @@
 # Test execution report
 
+## Dependency follow-up — 29 October 2026
+
+The [first recovery CI run](https://github.com/MasterBlasterMedia/fastfind-cms/actions/runs/40862897885) at `9249958` passed frontend tests/build/browser checks and Docker. The backend audit blocked the run on the revised CVE-2026-45070 advisory before its PHP tests ran. Updated only `symfony/mime` from 7.4.19 to the patched 7.4.22, retaining PHP 8.3 compatibility and existing dependency constraints.
+
+After the update, local Composer strict validation and the locked advisory audit passed with no advisories. All **143 PHP tests (680 assertions)** and **13 browser tests** passed again with zero skips and zero browser retries. Vue sources and built assets were unchanged from the successful 64-test run below. Check Actions for the follow-up commit's remote result; the first failed run remains historical evidence.
+
 ## Account recovery verification — 28 October 2026
 
 The password recovery update passed **220 tests** on `feature/fastfind-platform`: **143 Laravel tests (680 assertions), 64 Vue tests, and 13 real-browser tests**, with zero failures or skips. The original `fastfind` checkout remains clean on `main` at `b23de67`. No production deployment or external email delivery was performed.

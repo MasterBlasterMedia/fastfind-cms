@@ -4,6 +4,7 @@
 
 - Updated only `symfony/mime` from 7.4.19 to 7.4.22 after CI detected the revised CVE-2026-45070 advisory. Symfony confirms the previously advertised fix was not included in earlier releases; see its [release clarification](https://symfony.com/blog/about-the-security-entries-in-symfony-5-4-55-6-4-49-7-4-22-and-8-1-10).
 - Composer strict validation and the locked security audit passed. All 143 PHP tests and 13 browser scenarios passed again with the patched dependency, including real local reset-email rendering and media handling.
+- Isolated the recovery HTTP-header test from Vite asset generation so PHP-only CI can run from a fresh clone. The full 143-test PHP suite also passed with the local Vite manifest temporarily absent; browser tests still use actual built assets.
 
 ## Account password recovery — 2026-10-28
 

@@ -150,6 +150,8 @@ class PasswordRecoveryTest extends TestCase
 
     public function test_recovery_pages_and_endpoints_are_private_and_do_not_send_referrers(): void
     {
+        // This checks HTTP policy; built assets are exercised by the browser suite.
+        $this->withoutVite();
         foreach (['/studio/reset-password?token=example&email=test%40example.test', '/studio/forgot-password'] as $url) {
             $response = $this->get($url)->assertOk()->assertHeader('Referrer-Policy', 'no-referrer')->assertHeader('X-Robots-Tag', 'noindex, nofollow');
             $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));

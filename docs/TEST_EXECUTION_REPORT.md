@@ -6,6 +6,8 @@ The [first recovery CI run](https://github.com/MasterBlasterMedia/fastfind-cms/a
 
 After the update, local Composer strict validation and the locked advisory audit passed with no advisories. All **143 PHP tests (680 assertions)** and **13 browser tests** passed again with zero skips and zero browser retries. Vue sources and built assets were unchanged from the successful 64-test run below. Check Actions for the follow-up commit's remote result; the first failed run remains historical evidence.
 
+The [next CI run](https://github.com/MasterBlasterMedia/fastfind-cms/actions/runs/40863473475) passed the security audit, frontend/browser checks and Docker, then exposed a missing Vite manifest in the PHP-only job. The recovery HTTP-header test now uses Laravel's `withoutVite()` test helper; its status and security-header assertions remain intact. Re-ran all 143 PHP tests locally with the actual Vite manifest temporarily removed and restored it afterward: 680 assertions, zero failures or skips. The real asset build remains covered by the browser job.
+
 ## Account recovery verification — 28 October 2026
 
 The password recovery update passed **220 tests** on `feature/fastfind-platform`: **143 Laravel tests (680 assertions), 64 Vue tests, and 13 real-browser tests**, with zero failures or skips. The original `fastfind` checkout remains clean on `main` at `b23de67`. No production deployment or external email delivery was performed.

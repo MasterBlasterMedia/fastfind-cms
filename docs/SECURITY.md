@@ -2,6 +2,12 @@
 
 FastFind uses Laravel cookie sessions, regenerated authentication sessions, current CSRF tokens, hashed passwords, login throttling, active-account middleware and server-side policies/Gates. Authorization is checked by services as well as HTTP controllers. Owner/admin/editor can edit content; site management is owner/admin; users, plugin lifecycle and health are owner-only. Viewers can inspect drafts, so do not assign that role to public visitors.
 
+## Account recovery
+
+Active accounts can request a password reset through a rate-limited, CSRF-protected flow. Laravel stores hashed, expiring, single-use reset tokens. Generic responses cover unknown/inactive addresses and delivery failures. Reset URLs use the configured trusted `APP_URL`, never the request Host header. Password reset rotates the remember token, invalidates existing sessions on their next request and requires a fresh sign-in. Studio/recovery responses forbid caching and referrer forwarding. Synchronous mail delivery does not guarantee uniform response timing.
+
+Configure and verify SMTP before relying on inbox delivery. The development log mailer records complete reset links in private logs. Protect those logs, exclude reset URL query strings from access logs, and arrange administrative recovery for inaccessible mailboxes. See [ACCOUNT_RECOVERY](ACCOUNT_RECOVERY.md) for limits and setup.
+
 ## Content and publication
 
 Public endpoints select published snapshots and public slugs. Saving a newer draft does not change the live document or metadata. Search and SEO sitemap use published visibility. Saved-version preview links expire after 30 minutes, become invalid after a version change, and forbid caching/indexing. Such URLs grant temporary draft access and should be handled as credentials.
@@ -26,4 +32,4 @@ Use HTTPS, `APP_ENV=production`, `APP_DEBUG=false`, secure cookies, a private st
 
 Native backups are plaintext private SQLite/media snapshots with checksum verification and disposable restoration. Offsite encryption, key escrow, monitoring and cutover remain operator work. Error details are logged privately; plugin UI uses generic failures. Audit events record changes but are not a tamper-proof external security log.
 
-Account recovery, MFA, SSO and configurable role policies are not implemented. Automated security regression tests and dependency audits are documented in TEST_EXECUTION_REPORT.md; they are not a penetration test or production assurance. See KNOWN_LIMITATIONS.md before deployment.
+Email verification, MFA, SSO and configurable role policies are not implemented. Automated security regression tests and dependency audits are documented in TEST_EXECUTION_REPORT.md; they are not a penetration test or production assurance. See KNOWN_LIMITATIONS.md before deployment.

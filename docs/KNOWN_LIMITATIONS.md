@@ -22,12 +22,12 @@ This document describes the final implemented scope. Earlier baseline audit file
 
 ## Accounts and operations
 
-- Password reset/recovery, email verification, MFA, configurable RBAC, personal API tokens and SSO are not implemented. Owners provision accounts; plan administrative recovery before deployment.
+- Email password recovery is implemented for active accounts; inbox delivery requires configured SMTP and deployment verification. Email verification, MFA, configurable RBAC, personal API tokens and SSO are not implemented. Owners provision accounts; plan administrative recovery for inaccessible mailboxes before deployment. See [ACCOUNT_RECOVERY](ACCOUNT_RECOVERY.md).
 - SQLite is the executed database. MySQL/PostgreSQL support has not been validated with real servers, and native backups support only SQLite/local media. Horizontal scaling, distributed lock behavior and concurrent database races need deployment-specific testing.
 - Backups are plaintext private snapshots; offsite encryption/retention and live recovery cutover remain operator responsibilities. The tested restore is a disposable database/media restore with integrity and write checks.
 - Queue health reports uninstrumented worker liveness; a configured queue is not proof of a running worker. Scheduler service must be deployed and monitored separately.
-- Docker is development tooling using PHP's development server, not a production image. Docker builds and remote CI were configured but not executed on this host.
+- Docker is development tooling using PHP's development server, not a production image. [GitHub Actions run 39871303441](https://github.com/MasterBlasterMedia/fastfind-cms/actions/runs/39871303441) passed PHP 8.3/8.4, frontend/browser and container checks for commit `002e1af` on 22 October 2026. Local Docker execution and a production deployment remain unverified; that run does not validate later commits.
 - No independent penetration test, load benchmark, uptime test, screen-reader study, cross-browser/device matrix, production deployment or production recovery drill has been completed. Automated axe checks cover selected rendered states, not an accessibility certification.
 - Browser screenshots are captured and representative states were inspected, but approved image baselines and automated pixel-difference regression checks are not implemented. Layout/schema discovery tests and catalog browser coverage do not exhaust every interaction for every layout.
 
-Before production: choose/test the actual database and storage, implement required account recovery/MFA, deploy TLS/FPM/web server and scheduler/workers, manage secrets and publisher trust, test offsite recovery and performance at expected scale, and conduct manual security/accessibility review.
+Before production: choose/test the actual database and storage, verify reset-email delivery and implement required MFA, deploy TLS/FPM/web server and scheduler/workers, manage secrets and publisher trust, test offsite recovery and performance at expected scale, and conduct manual security/accessibility review.

@@ -1,6 +1,6 @@
 # HTTP API
 
-All paths below have prefix `/api/v1`. JSON responses use Laravel validation errors (`422`, `errors` map), unauthenticated `401`, denied `403`, and missing `404`. Stale versions are validation failures. Send `Accept: application/json`. Browser writes require a same-origin session and the `X-CSRF-TOKEN` from the HTML meta tag (or the latest session response). Login rotates the token; the Axios client updates it. No bearer-token/external OAuth API is implemented.
+All paths below have prefix `/api/v1`. JSON responses use Laravel validation errors (`422`, `errors` map), unauthenticated `401`, denied `403`, and missing `404`. Stale versions are validation failures. Send `Accept: application/json`. Browser writes require a same-origin session and the `X-CSRF-TOKEN` from the HTML meta tag (or the latest session response). Login and a successful password reset rotate the token; the Axios client updates it. No bearer-token/external OAuth API is implemented.
 
 ## Public and session endpoints
 
@@ -13,7 +13,11 @@ All paths below have prefix `/api/v1`. JSON responses use Laravel validation err
 | GET `/session` | Current user (or null) and CSRF token |
 | POST `/session` | `{email,password}`; login throttled; regenerated session and token |
 | DELETE `/session` | Logout and invalidate session |
+| POST `/password/forgot` | `{email}`; generic `{message}`; 6 requests/minute/IP and 5/hour/email key |
+| POST `/password/reset` | `{email,token,password,password_confirmation}`; `{message,csrf_token}`; 10 attempts/minute/IP |
 | GET `/preview/{id}?version=...&expires=...&signature=...` | Saved draft JSON for a valid signed link; subsequent version change returns 410 |
+
+Recovery requires CSRF protection even for guests. Only active accounts can receive and use links; unknown/inactive addresses, the broker's 60-second resend throttle, and delivery failures share the generic request response. Links expire after 60 minutes and are single use. Passwords need at least 12 characters and at most 72 UTF-8 bytes. Reset invalidates existing sessions on their next request and does not log the user in. Invalid links return a generic `422` error; request-limit failures return `429`. See [ACCOUNT_RECOVERY](ACCOUNT_RECOVERY.md) for mail setup and the complete contract.
 
 ## Content studio
 

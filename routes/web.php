@@ -13,6 +13,8 @@ Route::prefix('api/v1')->group(function () {
     Route::get('/session', [SessionController::class, 'show']);
     Route::post('/session', [SessionController::class, 'login'])->middleware('throttle:6,1');
     Route::delete('/session', [SessionController::class, 'logout'])->middleware('auth');
+    Route::post('/password/forgot', [\App\Http\Controllers\PasswordRecoveryController::class, 'forgot'])->middleware('throttle:password-recovery');
+    Route::post('/password/reset', [\App\Http\Controllers\PasswordRecoveryController::class, 'reset'])->middleware('throttle:password-reset');
     Route::get('/preview/{page}', [PublicController::class, 'preview'])->middleware('signed')->name('pages.preview');
 
     Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], '/plugins/{vendor}/{name}/{path?}', [\App\Http\Controllers\PluginController::class, 'dispatch'])

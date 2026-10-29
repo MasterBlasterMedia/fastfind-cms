@@ -56,6 +56,7 @@ class PluginLifecycleTest extends TestCase
     {
         $this->getJson('/api/v1/studio/plugins')->assertUnauthorized();
         foreach (['admin', 'editor', 'viewer'] as $role) {
+            $this->flushSession(); // Each role represents a separate signed-in session.
             $this->actingAs($this->user($role));
             $this->postJson('/api/v1/studio/plugins/fastfind/seo/install')->assertForbidden();
             $this->getJson('/api/v1/studio/plugins')->assertForbidden();
@@ -102,6 +103,7 @@ class PluginLifecycleTest extends TestCase
             [['source' => '/studio', 'destination' => '/new', 'status' => 301]],
             [['source' => '/old', 'destination' => '/\\evil.test', 'status' => 301]],
         ] as $redirects) $this->putJson('/api/v1/plugins/fastfind/seo/redirects', compact('redirects'))->assertUnprocessable();
+        $this->flushSession();
         $this->actingAs($this->user('editor'));
         $this->getJson('/api/v1/plugins/fastfind/seo/redirects')->assertForbidden();
     }

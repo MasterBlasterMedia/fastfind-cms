@@ -7,7 +7,7 @@ SQLite is the verified local database. MySQL/PostgreSQL connection configuration
 | Table | Purpose and constraints |
 |---|---|
 | `users` | Unique email, hashed password, owner/admin/editor/viewer role, active flag |
-| `password_reset_tokens` | Standard token storage; recovery endpoints/UI are not implemented |
+| `password_reset_tokens` | Hashed single-use recovery tokens, with 60-minute expiry; see [ACCOUNT_RECOVERY](ACCOUNT_RECOVERY.md) |
 | `pages` | Unique draft slug and nullable unique public slug, document JSON, status, monotonically increasing version, draft/public search visibility, independent public snapshot, scheduling timestamp, optional author/editor foreign keys |
 | `page_revisions` | Immutable snapshot JSON, unique page/version pair, optional actor; cascades when its page is deleted |
 | `navigation_items` | Ordered visible site-relative links |

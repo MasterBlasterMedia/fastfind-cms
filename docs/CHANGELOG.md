@@ -1,5 +1,13 @@
 # Platform development changelog
 
+## Account password recovery — 2026-10-28
+
+- Added sign-in recovery and reset forms backed by Laravel's password broker, trusted configured link origins, hashed expiring tokens, rate limits and generic account lookup responses.
+- Enforced confirmed passwords of at least 12 characters and at most 72 UTF-8 bytes; successful reset consumes the token, rotates remember credentials, records an audit event and requires a new sign-in.
+- Added password-hash session checks so old sessions lose access after a reset, and private/no-store/no-referrer responses for recovery pages and endpoints.
+- Added API, component and real browser regression coverage, including local notification delivery, token reuse and old-session rejection. See the execution report for verified results.
+- Documented log-mailer development setup, SMTP configuration and remaining delivery/production verification in [ACCOUNT_RECOVERY](ACCOUNT_RECOVERY.md).
+
 ## CI media isolation fix — 2026-10-22
 
 - Reproduced the GitHub Actions uploaded-image 404 with PHP `variables_order=GPCS`: the HTTP application used default storage while the test router served the isolated run storage.

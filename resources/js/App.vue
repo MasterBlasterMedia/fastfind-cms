@@ -4,10 +4,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { get, post, remove, failure } from './lib';
 import { activateClientExtensions } from './extensions';
 import { applyPageHead } from './head';
+import PasswordRecovery from './components/PasswordRecovery.vue';
 
 const route = useRoute();
 const router = useRouter();
 const isStudio = computed(() => route.path.startsWith('/studio'));
+const isRecovery = computed(() => ['/studio/forgot-password', '/studio/reset-password'].includes(route.path));
 const user = ref(null);
 const site = ref({ brand: { name: 'FastFind', tagline: 'Everything worth discovering, in one place.' }, navigation: [] });
 const ready = ref(false);
@@ -55,6 +57,13 @@ async function logout() {
   try { await remove('/session'); user.value = null; await reloadExtensions(); router.push('/'); }
   catch (e) { toast(failure(e)); }
 }
+async function resetPassword(input) {
+  const result = await post('/password/reset', input);
+  user.value = null;
+  credentials.value.password = loginError.value = '';
+  await reloadExtensions();
+  return result;
+}
 function search() {
   if (globalSearch.value.trim().length < 2) return;
   router.push({ path: '/search', query: { q: globalSearch.value.trim() } });
@@ -65,20 +74,22 @@ onMounted(async () => { await Promise.all([loadUser(), reloadSite()]); await rel
 
 <template>
   <div v-if="!ready" class="initial-load">Opening your workspace…</div>
-  <div v-else-if="isStudio && !user" class="auth-shell">
+  <div v-else-if="isStudio && (!user || isRecovery)" class="auth-shell">
     <div class="auth-art">
       <RouterLink class="brand brand--light" to="/"><span class="brand-mark">✳</span><span>FastFind<span class="brand-period">.</span></span></RouterLink>
       <div class="auth-art-body"><div class="eyebrow light">A NEW WAY TO CREATE</div><h1>A home for<br><em>every idea.</em></h1><p>Beautiful publishing tools. Thoughtful details. All yours.</p><div class="auth-orbit">✳</div></div>
       <div class="auth-art-foot">FASTFIND CONTENT STUDIO  /  INDEPENDENT BY DESIGN</div>
     </div>
     <main class="auth-main">
-      <div class="login-panel"><span class="eyebrow">YOUR WORKSPACE</span><h2>Welcome back.</h2><p>Sign in to shape something great.</p>
+      <PasswordRecovery v-if="isRecovery" :reset-password="resetPassword" />
+      <div v-else class="login-panel"><span class="eyebrow">YOUR WORKSPACE</span><h2>Welcome back.</h2><p>Sign in to shape something great.</p>
         <form @submit.prevent="login" class="stack-field">
           <label>Email address<input v-model.trim="credentials.email" autocomplete="username" type="email" required placeholder="you@example.com" /></label>
           <label>Password<input v-model="credentials.password" type="password" autocomplete="current-password" required placeholder="Your password" /></label>
           <p v-if="loginError" class="alert error" role="alert">{{ loginError }}</p>
           <button class="btn primary wide" :disabled="authBusy">{{ authBusy ? 'Signing in…' : 'Sign in to studio' }} <span>↗</span></button>
         </form>
+        <p><RouterLink to="/studio/forgot-password" class="text-link">Forgot your password?</RouterLink></p>
         <p class="footnote">Accounts are created by a workspace owner. Public registration is disabled.</p>
         <RouterLink to="/" class="text-link">← Back to website</RouterLink>
       </div>

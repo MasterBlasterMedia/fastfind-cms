@@ -1,5 +1,6 @@
 // Shared accessibility and spacing tokens. Public themes remain scoped below.
 :root { --focus: #2863c5; --surface: #fff; --surface-soft: #f3f5f3; --text: #172431; --text-muted: #52665c; --border: #ccd7ce; }
+.auth-shell .login-panel > :is(.eyebrow, p:not(.alert)) { color: #52665c; }
 :focus-visible { outline: 3px solid var(--focus) !important; outline-offset: 3px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .skip-link { position: fixed; top: 8px; left: 8px; padding: 14px 20px; background: #fff; color: #172431; border: 2px solid #172431; z-index: 500; transform: translateY(-180%); }

@@ -1,4 +1,22 @@
-# Test execution report — 22 October 2026
+# Test execution report
+
+## Account recovery verification — 28 October 2026
+
+The password recovery update passed **220 tests** on `feature/fastfind-platform`: **143 Laravel tests (680 assertions), 64 Vue tests, and 13 real-browser tests**, with zero failures or skips. The original `fastfind` checkout remains clean on `main` at `b23de67`. No production deployment or external email delivery was performed.
+
+- Laravel coverage adds active/inactive/unknown account behavior, trusted reset origins, hashed tokens, expiry and reuse rejection, password validation, rate limits, mail-failure token rollback, audit records, and session revocation. Existing permission tests now start a fresh session when switching test identities.
+- Twelve recovery component/integration cases include delayed responses during navigation, preserving a newly opened reset link, and clearing authenticated application state after the form unmounts. Focused builder coverage remains 89.15% statements, 73.68% branches, 88.63% functions, and 97.03% lines; recovery code is tested but is outside that coverage include list.
+- The browser flow reads the real local log-mail notification, resets once, rejects the old password and reused token, signs in with the new password, and verifies two previous browser sessions return HTTP 401. It checks recovery screens with axe and at 375px; the full suite now performs 12 selected-rule axe scans with zero violations. Desktop/mobile recovery screenshots were visually inspected.
+- The full browser run also passed the uploaded-image decoding/executable rejection regression, publishing, plugin/SEO lifecycle, themes, permissions, and catalog rendering at 375/768/1280/1920px. It used one worker and zero retries.
+- The production asset build passed (106 modules). Git whitespace checks passed. No dependency versions or database schema changed.
+
+Executed commands: `scripts/php.ps1 artisan test --compact --log-junit storage/framework/testing/recovery-backend.xml`, `npm.cmd run test:coverage`, `npm.cmd run build`, and `npm.cmd run test:e2e` with `PW_CHANNEL=chrome`. Reports, disposable fixtures and private mail logs are ignored by Git. Recovery checks fixed stale-response handling and low-contrast authentication text; test setup corrections preserved session validation and real email rendering.
+
+Remote CI for the preceding media fix passed on PHP 8.3/8.4, frontend and Docker jobs at [`002e1af`](https://github.com/MasterBlasterMedia/fastfind-cms/actions/runs/39871303441). That run does not validate this later recovery update; use the Actions run for the recovery commit for its remote result. Real SMTP, production database concurrency and deployment-specific verification remain outstanding; see [ACCOUNT_RECOVERY](ACCOUNT_RECOVERY.md).
+
+## Historical snapshot — 22 October 2026
+
+The remaining sections preserve the earlier verification record and its then-current implementation limits. The 28 October results and current [KNOWN_LIMITATIONS](KNOWN_LIMITATIONS.md) supersede those limits where explicitly updated above.
 
 Verified checkout: `feature/fastfind-platform`, in `fastfind-platform`. The original `fastfind` checkout remains on `main` at `b23de67a21863f23a5c5a551644658d1be5ac4c2`. Its tracked working tree was clean when this report was prepared. Nothing was deployed publicly.
 

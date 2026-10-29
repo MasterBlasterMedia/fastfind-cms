@@ -152,6 +152,7 @@ class PlatformContentTest extends TestCase
         $second = $this->user();
         $this->actingAs($first)->patchJson('/api/v1/studio/users/'.$first->id, ['role' => 'admin', 'is_active' => true])->assertUnprocessable();
         $this->patchJson('/api/v1/studio/users/'.$second->id, ['role' => 'admin', 'is_active' => true])->assertOk();
+        $this->flushSession(); // Switching test identities must not reuse the first user's password marker.
         $this->actingAs($second->fresh())->patchJson('/api/v1/studio/users/'.$first->id, ['role' => 'viewer', 'is_active' => false])->assertForbidden();
         $this->assertDatabaseHas('users', ['id' => $first->id, 'role' => 'owner', 'is_active' => true]);
     }
@@ -203,6 +204,7 @@ class PlatformContentTest extends TestCase
         $this->getJson('/api/v1/site')->assertOk()->assertJsonPath('theme.active', 'minimalist');
         $this->assertSame($before, Page::find($page['id'])->toArray());
         $this->putJson('/api/v1/studio/themes', ['id' => 'minimalist', 'settings' => ['accent' => 'url(javascript:bad)']])->assertUnprocessable();
+        $this->flushSession();
         $this->actingAs($this->user('editor'))->putJson('/api/v1/studio/themes', ['id' => 'professional'])->assertForbidden();
     }
 

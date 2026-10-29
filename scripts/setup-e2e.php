@@ -42,4 +42,6 @@ foreach (['owner', 'editor', 'viewer'] as $role) {
     \App\Models\User::create(['name' => ucfirst($role).' browser fixture', 'email' => $role.'@fastfind.test',
         'password' => 'FastFind-e2e-only-2026', 'role' => $role, 'is_active' => true]);
 }
+\App\Models\User::create(['name' => 'Recovery browser fixture', 'email' => 'recovery@fastfind.test',
+    'password' => 'FastFind-e2e-only-2026', 'role' => 'editor', 'is_active' => true]);
 echo "Disposable browser fixtures ready.\n";

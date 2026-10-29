@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const localPhp = path.resolve(root, '../.runtime/php/php.exe');
 const php = process.env.PHP_BINARY || (existsSync(localPhp) ? localPhp : 'php');
-const id = randomUUID();
+const id = process.env.FASTFIND_E2E_RUN_ID || randomUUID();
+if (!/^[a-f0-9-]{36}$/.test(id)) throw new Error('Invalid browser run identifier.');
 const storage = path.join(root, 'storage/framework/testing', `run-${id}`);
 // Laravel treats drive-letter cache paths as relative. Use portable project-relative cache paths.
 const cache = `storage/framework/testing/run-${id}/framework/cache`;
@@ -29,7 +30,7 @@ const env = { ...process.env, APP_ENV: 'testing', APP_DEBUG: 'false', APP_KEY: `
   VIEW_COMPILED_PATH: path.join(storage, 'framework/views'),
   SESSION_DRIVER: 'file', SESSION_COOKIE: `fastfind_e2e_${id}`, SESSION_SECURE_COOKIE: 'false',
   SESSION_DOMAIN: '', SESSION_PATH: '/', LOG_CHANNEL: 'single', LOG_STACK: 'single',
-  CACHE_STORE: 'file', CACHE_PREFIX: `e2e_${id}`, QUEUE_CONNECTION: 'sync', MAIL_MAILER: 'log',
+  CACHE_STORE: 'file', CACHE_PREFIX: `e2e_${id}`, QUEUE_CONNECTION: 'sync', MAIL_MAILER: 'log', MAIL_LOG_CHANNEL: 'single',
   FASTFIND_BACKUPS_ENABLED: 'false', FASTFIND_BACKUP_SCHEDULED: 'false' };
 delete env.PHP_CLI_SERVER_WORKERS;
 console.info(`Disposable browser storage: ${storage}\nPHP setup and request log: ${logPath}`);

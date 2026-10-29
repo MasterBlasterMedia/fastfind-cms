@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
+
+// Share only this run's private fixture location with the server and browser workers.
+process.env.FASTFIND_E2E_RUN_ID ||= randomUUID();
 
 export default defineConfig({
   testDir: './tests/e2e',

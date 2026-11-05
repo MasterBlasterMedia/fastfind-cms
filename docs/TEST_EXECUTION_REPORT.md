@@ -1,5 +1,11 @@
 # Test execution report
 
+## Dependency audit follow-up — 4 November 2026
+
+The [first extension CI run](https://github.com/MasterBlasterMedia/fastfind-cms/actions/runs/41944921490) for `5be7dff` stopped in Composer/npm audits before executing its backend/frontend tests. Updated only the three flagged Symfony HTTP/routing components to 7.4.23 and `follow-redirects` to 1.16.2, plus scoped development-only formatter overrides for patched glob/minimatch. [CHANGELOG](CHANGELOG.md) records advisory links and exact versions; no audit suppressions or reduced CI thresholds were added.
+
+Composer strict validation and both dependency audits now pass with zero advisories. Re-ran **all 213 PHP tests (1,058 assertions), all 84 Vue tests with coverage, the production build and all 16 browser scenarios** against the updated dependencies: all passed, zero skips/retries. A focused compatibility smoke also confirmed EditorConfig pattern matching, glob file discovery and HTML formatting with the overridden development dependencies. These local results are separate from the follow-up remote CI run.
+
 ## Themes, marketplace and visual builder — 4 November 2026
 
 Local verification passed **313 tests** on `feature/fastfind-platform`: **213 Laravel tests (1,058 assertions), 84 Vue tests and 16 Chrome browser scenarios**. Zero failures, skips or browser retries in the final runs. The production asset build passed with 112 transformed modules. No database schema or dependency versions changed.

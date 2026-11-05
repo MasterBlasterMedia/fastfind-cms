@@ -1,5 +1,11 @@
 # Platform development changelog
 
+## CI dependency security follow-up — 2026-11-04
+
+- CI for `5be7dff` stopped at dependency audits after newly published advisories. Updated `symfony/http-foundation`, `symfony/http-kernel` and `symfony/routing` from 7.4.21 to 7.4.23 while retaining PHP 8.3 support and the existing Mime patch.
+- Updated `follow-redirects` to 1.16.2. Vue Test Utils' formatter still requests vulnerable glob/minimatch majors, so added narrow `js-beautify` overrides for `glob` 14.0.2 and `editorconfig`'s `minimatch` 11.0.1; glob resolves its own patched minimatch 11.0.4. These formatter dependencies are development-only. Remove overrides when upstream constraints include patched versions.
+- Composer and npm audits now report no vulnerabilities; no advisories were suppressed and CI thresholds remain unchanged. See [Symfony's advisory](https://github.com/symfony/symfony/security/advisories/GHSA-3h27-hjv7-fqjx), [follow-redirects](https://github.com/advisories/GHSA-mrwp-f3q8-3g9p), [glob](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4), and [minimatch](https://github.com/advisories/GHSA-g3hv-75wg-m249).
+
 ## Custom themes, external marketplace and visual builder — 2026-11-04
 
 - Added a shared theme manifest contract for bundled/custom designs, signed data-only ZIP installation, packaging CLI, Aurora example, safe design tokens and audited activation without modifying saved content.

@@ -23,5 +23,11 @@
     "jsdom": "^26.1.0",
     "@playwright/test": "^1.56.0",
     "@axe-core/playwright": "^4.10.2"
+  },
+  "overrides": {
+    "js-beautify": {
+      "glob": "14.0.2",
+      "editorconfig": { "minimatch": "11.0.1" }
+    }
   }
 }

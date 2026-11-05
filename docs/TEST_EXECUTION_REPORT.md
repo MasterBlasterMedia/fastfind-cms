@@ -6,6 +6,8 @@ The [first extension CI run](https://github.com/MasterBlasterMedia/fastfind-cms/
 
 Composer strict validation and both dependency audits now pass with zero advisories. Re-ran **all 213 PHP tests (1,058 assertions), all 84 Vue tests with coverage, the production build and all 16 browser scenarios** against the updated dependencies: all passed, zero skips/retries. A focused compatibility smoke also confirmed EditorConfig pattern matching, glob file discovery and HTML formatting with the overridden development dependencies. These local results are separate from the follow-up remote CI run.
 
+The [follow-up run](https://github.com/MasterBlasterMedia/fastfind-cms/actions/runs/41945447912) passed both PHP versions and Docker, then npm 10.9.9 rejected a deeply nested override during clean installation. Flattened it into separate `js-beautify` and `editorconfig` overrides without changing resolved package versions. Verified an actual clean install in an empty disposable directory using npm 10.9.9, checked the resolved dependency tree and revalidated the original cross-platform lockfile metadata. The application and tested dependency versions are unchanged.
+
 ## Themes, marketplace and visual builder — 4 November 2026
 
 Local verification passed **313 tests** on `feature/fastfind-platform`: **213 Laravel tests (1,058 assertions), 84 Vue tests and 16 Chrome browser scenarios**. Zero failures, skips or browser retries in the final runs. The production asset build passed with 112 transformed modules. No database schema or dependency versions changed.

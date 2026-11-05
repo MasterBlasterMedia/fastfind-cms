@@ -2,6 +2,23 @@
 
 The builder edits the existing FastFind page document. It uses Vue 3, the shared content registry, and the normal versioned page API. The same `Block.vue` and `SectionLayout.vue` render a draft preview and a published page.
 
+FastFind provides its own visual editing experience inspired by the section-and-module workflow of visual site builders. It does not embed Divi, run WordPress, or import Divi layouts or shortcodes.
+
+## Visual editing workflow
+
+- **Visual view** renders the modules inside editable sections. Select a module on the canvas or use its named Edit button to open its properties. Headings and paragraphs also have an **Edit text on canvas** button that opens a labeled text field in place; changes immediately update the inspector and draft document.
+- **Wireframe view** shows compact section/module outlines and text summaries for arranging long pages. It edits the same document as Visual view, with the same move, duplicate, delete, and insertion controls.
+- **Add content** includes a searchable module palette and section layout choices. Palette additions append to the selected section. The contextual **+ Module** buttons insert at the indicated position inside a section; **+ Section** opens a layout picker and inserts after that section. Searchable pickers disable modules incompatible with the target layout.
+- **Layers** lists sections and their modules, with independently collapsible sections. Selecting an entry selects the corresponding canvas content and opens its inspector. Collapse state affects navigation only; it does not hide published content.
+- **Content / Section design** separates module fields from the containing section's layout, background, width, spacing, and alignment. Design changes apply to the whole section and appear on the editing canvas. Image modules retain the media-library chooser.
+- **Desktop**, **Tablet**, and **Mobile** controls change the editing canvas width. Desktop uses the available workspace width; Tablet uses 768px and Mobile uses 375px. **Canvas viewport** also offers fixed 1280px and 1920px widths. Wider canvases scroll within the editor, keeping the inspector and palette accessible. The chosen width carries into Draft preview and back.
+
+View mode, canvas width, search text, and collapsed layers are temporary workspace preferences. They do not change saved page content or add undo entries. The editor's module and section buttons can be used with a keyboard; arrow controls and the destination selector provide movement without dragging. Insertion dialogs support Escape, keyboard focus containment, and return focus to the prior control when it remains on the page.
+
+The canvas shows all modules so they remain selectable, including the contents of tabbed and carousel sections. Use **Preview** to exercise the actual tab, accordion, and carousel behavior. Canvas frames and editing controls are not part of the public page. Responsive grids follow the registry's column counts and canvas container width; typography and third-party media queries still require testing at real browser viewport widths.
+
+This implementation retains the section → ordered blocks document model. "Module" is the editor-facing name for a block. It does not add nested row/column containers, freeform positioning, per-device design overrides, arbitrary module CSS, global reusable modules, or a rich-text formatting toolbar. Inline text editing is available for built-in headings and paragraphs; all registered modules use their schema-driven inspector fields.
+
 ## Document contract
 
 ```json
@@ -91,10 +108,14 @@ Add built-in definitions to `resources/content/registry.json`, then register the
 
 Third-party plugins use `PluginContext` on the server to register namespaced blocks/layouts with a server validator. Their reviewed, built JavaScript module registers the matching definition with `registerBlock` or `registerLayout` and the Vue component with `registerBlockRenderer`. The compiled administration module exports `pluginId`, a `views` map, and an optional `register()` function. Consult `PLUGIN_DEVELOPMENT.md` and the sample plugin for the complete contract. Uploaded Vue source is not evaluated dynamically; application assets must be rebuilt after adding trusted frontend modules.
 
+The visual canvas, palette, layer navigator, and insertion pickers consume these same block/layout registries. Plugin definitions therefore receive the same selection, insertion, compatibility, inspector, and persistence behavior as built-in definitions, without a separate official-plugin path. `components/builder/BuilderCanvas.vue` emits document-edit actions to `views/Editor.vue`; `InsertPicker.vue` and `LayerNavigator.vue` provide the shared picker and navigation UI. Save/version reconciliation remains in `builder/operations.js`.
+
 The current layout extension API supports declarative grids and existing built-in interaction patterns; it does not expose an arbitrary third-party layout-renderer registration API. Custom block rendering is available. A missing block renderer produces an explicit unavailable-content message.
 
 ## Verification
 
 Run `npm test` for frontend behavior and registry rendering checks, `npm run build` for a production asset build, and `npm run test:e2e` for the configured real-browser suite. Backend registry and workflow tests run with `php artisan test`. The browser harness uses an isolated disposable database; do not reset an existing site to run tests.
+
+`npm test -- tests/frontend/visual-builder.test.js` runs focused editor integration checks for inline editing, undo/redo, contextual insertion order and compatibility, layer selection, section design, responsive workspace state, palette filtering, viewer restrictions, and preservation of edits made during a save request. It also registers a third-party block, renderer, and layout through the public APIs and exercises insertion, editing, rendering, layers, and saving through the same UI.
 
 Tests should discover definitions from the registry and exercise defaults, empty content, restrictions, cloning, reordering, safe URL rendering, interactive semantics and persistence. Required target viewport widths are 375, 768, 1280 and 1920 pixels. Current test results and any remaining coverage gaps belong in `TESTING.md` and the verification report; registration or a successful build alone does not prove the complete layout matrix passes.

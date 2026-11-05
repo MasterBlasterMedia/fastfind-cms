@@ -8,16 +8,24 @@ This is an actively developed platform, not a production-ready release. Read the
 
 ## What is included
 
-- **Visual page builder:** 16 section layouts, 22 typed content blocks, drag-and-drop, keyboard movement, duplication, undo/redo, and responsive previews.
+- **Visual page builder:** Divi-style native editing with Visual/Wireframe views, layers, on-canvas heading/paragraph editing, searchable insertion, design controls and responsive canvas/preview. Includes 16 section layouts, 22 typed blocks, drag-and-drop, keyboard movement and undo/redo.
 - **Publishing:** drafts separated from public snapshots, version checks, revisions/restoration, scheduling, review/archive APIs, and signed saved-version preview links.
 - **Administration:** owner/admin/editor/viewer permissions, account activation, email password recovery with session invalidation, navigation, brand settings, audit activity, media management, and system health.
 - **Media:** decoded/re-encoded raster uploads, thumbnails, dimension limits, and protection against deleting currently referenced media.
 - **Plugins:** manifests, compatibility/dependency checks, lifecycle controls, signed ZIP installation, settings, routes, events, scheduled tasks, blocks, layouts, and compiled Vue views.
 - **FastFind SEO:** page metadata, canonical/social tags, validated structured data, sitemaps, and redirects. It uses the **same public `PluginContext` APIs as third-party plugins**, with no SEO-specific loader exception.
-- **Themes and operations:** Professional and Minimalist themes, validated design tokens, SQLite backups, verified disposable restoration, Docker development tooling, and GitHub Actions CI.
+- **Themes:** Professional and Minimalist designs plus signed custom theme ZIP installation, live design samples and validated palette/typography/width/corner/spacing settings. Included and third-party themes share the same contract; an Aurora example is included.
+- **External marketplace:** configurable catalog/storefront/download hosts, owner review, verified downloads and explicit activation. A separate static storefront starter is included for your future marketplace website.
+- **Operations:** SQLite/media backups, verified disposable restoration, Docker development tooling, and GitHub Actions CI.
 - **Verification:** Laravel, Vitest/Vue Test Utils, Playwright, and automated accessibility checks.
 
-Custom collections/taxonomies, nested/reusable blocks, rich-text editing, email verification/MFA, and a hosted marketplace remain future work. The plugin catalog lists real reviewed local sources; it is not a live public marketplace.
+Custom collections/taxonomies, nested/reusable blocks, rich-text formatting, email verification/MFA, and marketplace commerce/moderation remain future work. The editor is native FastFind code; it does not embed Divi or accept WordPress/Divi exports. No public marketplace is hosted or configured by default.
+
+## Themes and your separate marketplace
+
+Open **Studio → Themes** to select or customize a design. Owners can upload a signed custom ZIP and its signature JSON; applying it is a separate action. Start a theme from [Aurora](examples/themes/aurora/theme.json) and follow the [theme developer guide](docs/THEME_DEVELOPMENT.md). New themes use the shared renderer and supported design tokens, without edits to Laravel or special cases for official packages.
+
+When you have a marketplace domain, configure `FASTFIND_MARKETPLACE_URL`, `FASTFIND_MARKETPLACE_SITE_URL`, `FASTFIND_MARKETPLACE_HOSTS` and independently approved publisher public keys. [MARKETPLACE](docs/MARKETPLACE.md) documents the catalog, downloads and setup. The [standalone storefront](examples/marketplace-site/README.md) can be hosted separately and serves the same catalog the CMS browses. Leave the settings blank until real releases are published.
 
 ## Requirements
 
@@ -161,7 +169,7 @@ On Linux, Playwright may need system libraries: `npx playwright install --with-d
 
 Backend tests use in-memory SQLite. The migration check creates a disposable database. Browser tests launch their own isolated server on **port 8123**, with a new database/storage directory per run. Do not point tests at a live installation. Reports are generated under `coverage/`, `playwright-report/`, and `test-results/` and are ignored by Git.
 
-Recorded local verification on **28 October 2026** passed **143 Laravel tests, 64 Vue tests, and 13 real-browser tests**, plus the production asset build. Browser coverage includes 375/768/1280/1920px and 12 axe scans. Earlier dependency audits and migration roundtrips remain recorded separately. These results describe the tested scope, not full security/accessibility certification. See the [test execution report](docs/TEST_EXECUTION_REPORT.md).
+Recorded local verification on **4 November 2026** passed **213 Laravel tests, 84 Vue tests, and 16 real-browser tests**, plus the production asset build. Browser coverage includes signed custom theme installation, native visual editing, 375/768/1280/1920px and 14 axe scans. Earlier dependency audits and migration roundtrips remain recorded separately. These results describe the tested scope, not full security/accessibility certification. See the [test execution report](docs/TEST_EXECUTION_REPORT.md).
 
 GitHub Actions is configured to check PHP 8.3/8.4, frontend tests/build, Chromium browser tests, and the Docker image. Check the repository's **Actions** tab for remote results; local results and CI results are separate evidence.
 
@@ -190,6 +198,7 @@ GitHub Actions is configured to check PHP 8.3/8.4, frontend tests/build, Chromiu
 | Password recovery and mail setup | [ACCOUNT_RECOVERY](docs/ACCOUNT_RECOVERY.md) |
 | Plugin SDK and independent example | [PLUGIN_DEVELOPMENT](docs/PLUGIN_DEVELOPMENT.md), [Acme Notice](examples/plugins/acme-notice/README.md) |
 | Theme development | [THEME_DEVELOPMENT](docs/THEME_DEVELOPMENT.md) |
+| External marketplace and separate storefront | [MARKETPLACE](docs/MARKETPLACE.md), [Storefront starter](examples/marketplace-site/README.md) |
 | Operations and recovery | [DEPLOYMENT](docs/DEPLOYMENT.md), [BACKUP_RESTORE](docs/BACKUP_RESTORE.md) |
 | Security and performance | [SECURITY](docs/SECURITY.md), [SECURITY_PERFORMANCE_REPORT](docs/SECURITY_PERFORMANCE_REPORT.md) |
 | Verification | [TESTING](docs/TESTING.md), [TEST_EXECUTION_REPORT](docs/TEST_EXECUTION_REPORT.md) |

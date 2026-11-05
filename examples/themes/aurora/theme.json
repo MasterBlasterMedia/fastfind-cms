@@ -1,0 +1,19 @@
+{
+  "id": "aurora",
+  "name": "Aurora",
+  "version": "1.0.0",
+  "description": "A spacious violet and cream theme using the public FastFind theme contract.",
+  "layout": "editorial",
+  "requires": {"fastfind": "^1.0"},
+  "defaults": {
+    "accent": "#6841a5",
+    "font": "sans",
+    "width": "wide",
+    "background": "#faf7ff",
+    "surface": "#ffffff",
+    "text": "#252034",
+    "muted": "#60546f",
+    "radius": "rounded",
+    "spacing": "relaxed"
+  }
+}

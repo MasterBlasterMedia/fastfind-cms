@@ -76,6 +76,18 @@ Legacy `seo_title` and `seo_description` remain accepted. Omitted legacy values 
 
 ## Plugin endpoints
 
+Theme and marketplace endpoints (same `/api/v1` prefix):
+
+| Method/path | Contract |
+|---|---|
+| GET `/studio/themes` | Themes plus active descriptor/settings; owner/admin |
+| PUT `/studio/themes` | `{id,settings}`; validated design tokens and audited activation; owner/admin |
+| POST `/studio/themes/packages` | Multipart signed ZIP: `file`, `publisher`, `signature`, `sha256`; owner only, no activation |
+| GET `/studio/marketplace` | Configured state, catalog name/storefront URL and items with compatibility/trust/installability issues; owner only |
+| POST `/studio/marketplace/install` | `{type,id,version,sha256}`; refetches catalog, verifies/downloads selected package; owner only, no activation |
+
+See [MARKETPLACE](MARKETPLACE.md) and [THEME_DEVELOPMENT](THEME_DEVELOPMENT.md) for the full package contracts and configuration. Theme upload and marketplace installation are limited to five requests/minute.
+
 | Method/path | Contract |
 |---|---|
 | GET `/studio/extensions` | Active page fields, settings/admin descriptors and IDs |

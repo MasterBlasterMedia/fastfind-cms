@@ -3,5 +3,7 @@
   "name": "FastFind Minimalist",
   "version": "1.0.0",
   "description": "Quiet typography, restrained borders and a focused reading column.",
-  "defaults": {"accent": "#33564b", "font": "serif", "width": "normal"}
+  "layout": "minimal",
+  "requires": {"fastfind": "^1.0"},
+  "defaults": {"accent": "#33564b", "font": "serif", "width": "normal", "background": "#fffefa", "surface": "#ffffff", "text": "#263c34", "muted": "#52665c", "radius": "square", "spacing": "relaxed"}
 }

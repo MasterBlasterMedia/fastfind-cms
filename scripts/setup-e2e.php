@@ -44,4 +44,15 @@ foreach (['owner', 'editor', 'viewer'] as $role) {
 }
 \App\Models\User::create(['name' => 'Recovery browser fixture', 'email' => 'recovery@fastfind.test',
     'password' => 'FastFind-e2e-only-2026', 'role' => 'editor', 'is_active' => true]);
+// A fresh per-run publisher signs a real package for the browser installer test.
+$themeArchive = $root.'/aurora.zip';
+$zip = new ZipArchive;
+if ($zip->open($themeArchive, ZipArchive::CREATE | ZipArchive::EXCL) !== true) throw new RuntimeException('Cannot create theme fixture.');
+$zip->addFile(base_path('examples/themes/aurora/theme.json'), 'theme.json');
+$zip->close();
+$signingKey = base64_decode(getenv('FASTFIND_E2E_SIGNING_KEY'), true);
+if ($signingKey === false || strlen($signingKey) !== SODIUM_CRYPTO_SIGN_SECRETKEYBYTES) throw new RuntimeException('Missing per-run signing key.');
+file_put_contents($themeArchive.'.json', json_encode(['publisher' => 'local-reviewed', 'sha256' => hash_file('sha256', $themeArchive),
+    'signature' => base64_encode(sodium_crypto_sign_detached(file_get_contents($themeArchive), $signingKey))], JSON_THROW_ON_ERROR));
+sodium_memzero($signingKey);
 echo "Disposable browser fixtures ready.\n";

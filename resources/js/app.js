@@ -9,6 +9,7 @@ const router = createRouter({ history: createWebHistory(), routes: [
   { path: '/studio/pages/:id', component: () => import('./views/Editor.vue') },
   { path: '/studio/plugins', component: () => import('./views/Plugins.vue') },
   { path: '/studio/themes', component: () => import('./views/Themes.vue') },
+  { path: '/studio/marketplace', component: () => import('./views/Marketplace.vue') },
   { path: '/studio/health', component: () => import('./views/Health.vue') },
   { path: '/studio/extensions/:vendor/:name/:view', component: () => import('./views/Extension.vue') },
   { path: '/studio/:section?', component: () => import('./views/Studio.vue') },

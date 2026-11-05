@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Themes and plugins for independent FastFind websites."><title>FastFind Marketplace</title><link rel="stylesheet" href="styles.css"><script type="module" src="marketplace.js"></script></head>
+<body>
+  <header class="wrap"><a class="brand" href="./">✳ FastFind<span>MARKETPLACE</span></a><a href="#catalog">Explore extensions ↗</a></header>
+  <main class="wrap">
+    <section class="hero"><span class="eyebrow">MAKE IT YOURS</span><h1>A fresh look.<br>A new possibility.</h1><p>Find themes and plugins for your FastFind site. Download a release here or connect this catalog from your FastFind installation.</p><a class="button" href="#catalog">Browse the collection ↓</a></section>
+    <section id="catalog" aria-labelledby="catalog-title"><div class="heading"><h2 id="catalog-title">The collection</h2><a href="catalog.json">Catalog API ↗</a></div><div class="filters"><label>Search<input id="search" type="search" placeholder="Name, publisher or feature"></label><label>Type<select id="type"><option value="all">Themes and plugins</option><option value="theme">Themes</option><option value="plugin">Plugins</option></select></label></div><p id="status" role="status">Loading releases…</p><div id="releases" class="grid"></div></section>
+    <section class="connect"><h2>Bring it into your workspace.</h2><p>Your FastFind owner can connect this catalog in the site's marketplace configuration, approve its download hosts and trust the publisher's public key. Downloads include signature metadata for manual installation.</p></section>
+  </main><footer class="wrap">FastFind · Independent by design.</footer>
+</body></html>

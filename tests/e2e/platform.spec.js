@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import path from 'node:path';
 
 let ownerCookies;
 async function login(page, role = 'owner') {
@@ -28,6 +29,21 @@ async function create(page, title) {
 async function saved(page) {
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
   await expect(page.locator('.editor-status')).toContainText('All changes saved');
+}
+async function dragAcrossCanvas(page, source, target) {
+  // Start the native drag before scrolling a tall canvas to its destination.
+  await source.scrollIntoViewIfNeeded();
+  const start = await source.boundingBox();
+  expect(start).not.toBeNull();
+  const x = start.x + start.width / 2, y = start.y + start.height / 2;
+  await page.mouse.move(x, y); await page.mouse.down();
+  await page.mouse.move(x + 8, y + 8, { steps: 3 });
+  await target.scrollIntoViewIfNeeded();
+  const end = await target.boundingBox();
+  expect(end).not.toBeNull();
+  await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, { steps: 6 });
+  await page.mouse.move(end.x + end.width / 2 + 1, end.y + end.height / 2 + 1);
+  await page.mouse.up();
 }
 test.beforeAll(async ({ browser }) => {
   const page = await browser.newPage(); await login(page); ownerCookies = await page.context().cookies(); await page.close();
@@ -115,13 +131,13 @@ test('reorder, cross-section movement, compatibility, duplication and undo work'
   await page.getByRole('button', { name: 'Edit Paragraph block', exact: true }).first().click();
   await page.getByLabel('Move to section').selectOption('1');
   await expect(page.locator('.canvas-section').nth(1).locator('.canvas-block')).toHaveCount(1);
-  await page.locator('.canvas-section').nth(1).locator('.block-drag').dragTo(page.locator('.canvas-section').first().locator('.section-end'));
+  await dragAcrossCanvas(page, page.locator('.canvas-section').nth(1).locator('.block-drag'), page.locator('.canvas-section').first().locator('.section-end'));
   await expect(page.locator('.canvas-section').first().locator('.canvas-block')).toHaveCount(2);
-  await page.locator('.canvas-section').first().locator('.block-drag').last().dragTo(page.locator('.canvas-section').nth(1).locator('.section-end'));
+  await dragAcrossCanvas(page, page.locator('.canvas-section').first().locator('.block-drag').last(), page.locator('.canvas-section').nth(1).locator('.section-end'));
   await expect(page.locator('.canvas-section').nth(1).locator('.canvas-block')).toHaveCount(1);
   await page.locator('.layout-choice').filter({ hasText: 'Accordion' }).click();
   await expect(page.getByRole('button', { name: 'Add Paragraph block', exact: true })).toBeDisabled();
-  await page.locator('.canvas-section').first().locator('.drag-handle').dragTo(page.locator('.canvas-section').nth(1).locator('.section-toolbar'));
+  await dragAcrossCanvas(page, page.locator('.canvas-section').first().locator('.drag-handle'), page.locator('.canvas-section').nth(1).locator('.section-toolbar'));
   await expect(page.locator('.canvas-section').first()).toHaveAttribute('data-layout', 'two-columns');
   await saved(page);
   await page.reload();
@@ -183,6 +199,43 @@ test('theme switching, navigation persistence and owner health have real effects
   await expect(page.locator('main')).toContainText(/Database/i);
 });
 
+test('owner uploads a signed custom theme, previews it and applies it explicitly', async ({ page }, testInfo) => {
+  const fixture = path.resolve('storage/framework/testing', `run-${process.env.FASTFIND_E2E_RUN_ID}`, 'framework/testing/aurora.zip');
+  await page.goto('/studio/themes');
+  const previous = (await api(page, 'GET', '/studio/themes')).data;
+  await page.getByLabel('Theme package ZIP', { exact: true }).setInputFiles(fixture);
+  await page.getByLabel('Signature metadata (optional)', { exact: true }).setInputFiles(`${fixture}.json`);
+  await expect(page.getByLabel('Trusted publisher ID', { exact: true })).toHaveValue('local-reviewed');
+  await page.getByRole('button', { name: 'Verify and install', exact: true }).click();
+  await expect(page.locator('.package-upload [role=status]')).toContainText('Theme installed');
+  await expect(page.getByRole('button', { name: /Aurora/ })).toHaveAttribute('aria-pressed', 'true');
+  expect((await api(page, 'GET', '/studio/themes')).data.active).toBe(previous.active);
+  await page.getByRole('combobox', { name: 'Corner style', exact: true }).selectOption('rounded');
+  await page.getByRole('button', { name: 'Apply theme', exact: true }).click();
+  await expect(page.locator('.toast')).toContainText('Public theme updated');
+  await page.screenshot({ path: testInfo.outputPath('custom-theme-library.png'), fullPage: true });
+  const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(scan.violations.map(({ id, nodes }) => ({ id, nodes: nodes.map(node => node.target) }))).toEqual([]);
+  await page.goto('/');
+  await expect(page.locator('.public-shell')).toHaveAttribute('data-theme', 'aurora');
+  await expect(page.locator('.public-shell')).toHaveAttribute('data-theme-layout', 'editorial');
+  await expect(page.locator('.public-shell')).toHaveCSS('background-color', 'rgb(250, 247, 255)');
+  await expect(page.locator('.article-card').first()).toHaveCSS('border-radius', '24px');
+  await page.screenshot({ path: testInfo.outputPath('custom-theme-public.png'), fullPage: true });
+  expect((await api(page, 'PUT', '/studio/themes', { id: previous.active, settings: previous.settings })).status).toBe(200);
+});
+
+test('marketplace explains connection setup and links to real libraries', async ({ page }, testInfo) => {
+  await page.goto('/studio/marketplace');
+  await expect(page.getByRole('heading', { name: 'Connect your marketplace' })).toBeVisible();
+  await expect(page.locator('.marketplace-card')).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath('marketplace-unconfigured.png'), fullPage: true });
+  const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(scan.violations.map(({ id, nodes }) => ({ id, nodes: nodes.map(node => node.target) }))).toEqual([]);
+  await page.getByRole('link', { name: 'Explore themes', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Your theme library' })).toBeVisible();
+});
+
 test('viewer can read but cannot change content or manage plugins', async ({ browser }) => {
   const page = await browser.newPage(); await login(page, 'viewer');
   await page.goto('/studio/pages');
@@ -216,6 +269,28 @@ test('media upload displays decoded image and rejects executable content', async
   const validation = await rejection.json();
   await expect(page.locator('.toast')).toContainText(validation.errors.file[0]);
   await expect(page.locator('.media-grid img')).toHaveCount(1);
+});
+
+test('visual builder edits inline, inserts modules, switches layers and saves the same document', async ({ page }, testInfo) => {
+  await create(page, 'Visual canvas workflow');
+  await page.getByRole('button', { name: 'Add Paragraph block', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit text on canvas', exact: true }).first().click();
+  await page.getByLabel('Edit paragraph on canvas', { exact: true }).fill('Written directly on the visual canvas');
+  await page.getByRole('button', { name: 'Insert module after Paragraph 1 in section 1', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Insert a module' }).getByLabel('Search modules', { exact: true }).fill('Heading');
+  await page.getByRole('button', { name: 'Insert Heading', exact: true }).click();
+  await expect(page.locator('.canvas-block')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Wireframe view', exact: true }).click();
+  await page.getByRole('button', { name: 'Layers', exact: true }).click();
+  await page.getByRole('button', { name: 'Select Paragraph module 1 in section 1', exact: true }).click();
+  await expect(page.getByLabel('Paragraph text', { exact: true })).toHaveValue('Written directly on the visual canvas');
+  await page.getByRole('button', { name: 'Mobile', exact: true }).click();
+  await page.getByRole('button', { name: 'Visual view', exact: true }).click();
+  await saved(page);
+  await page.screenshot({ path: testInfo.outputPath('visual-builder-mobile-canvas.png'), fullPage: true });
+  await page.reload();
+  await expect(page.locator('.canvas-block')).toHaveCount(2);
+  await expect(page.locator('.canvas-block-preview').first()).toContainText('Written directly on the visual canvas');
 });
 
 test('editor controls are accessible in light and dark mode', async ({ page }, testInfo) => {

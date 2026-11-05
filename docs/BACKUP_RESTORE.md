@@ -2,6 +2,8 @@
 
 The implemented backup workflow supports **SQLite plus local public media storage**. It does not claim PostgreSQL/MySQL/S3 backup support or an automated production restore. Server-administrator access is required to run the CLI. Backups contain private data and remain under `storage/app/private/backups`, outside both the web root and public-media root.
 
+Installed theme/plugin release directories in private storage are not included. Preserve `storage/app/private/themes` and the configured plugin package directory separately, together with the application release, `APP_KEY`, publisher trust configuration and original signed packages. Restore those files with the matching database package metadata before validating a recovery deployment.
+
 ```sh
 php artisan fastfind:backup
 php artisan fastfind:backup-verify 20261020T220000Z-00000000-0000-4000-8000-000000000000

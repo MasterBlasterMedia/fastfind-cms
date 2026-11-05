@@ -25,6 +25,8 @@ Route::prefix('api/v1')->group(function () {
         Route::get('/extensions', [\App\Http\Controllers\PluginController::class, 'extensions']);
         Route::get('/plugins', [\App\Http\Controllers\PluginController::class, 'index']);
         Route::get('/plugin-catalog', [\App\Http\Controllers\PluginController::class, 'catalog']);
+        Route::get('/marketplace', [\App\Http\Controllers\MarketplaceController::class, 'index']);
+        Route::post('/marketplace/install', [\App\Http\Controllers\MarketplaceController::class, 'install'])->middleware('throttle:5,1');
         Route::post('/plugins/packages', [\App\Http\Controllers\PluginController::class, 'upload'])->middleware('throttle:5,1');
         Route::match(['GET', 'PUT'], '/plugins/{vendor}/{name}/settings', [\App\Http\Controllers\PluginController::class, 'settings']);
         Route::post('/plugins/{vendor}/{name}/{action}', [\App\Http\Controllers\PluginController::class, 'lifecycle'])->where('action', 'install|activate|deactivate|upgrade|uninstall');
@@ -51,6 +53,7 @@ Route::prefix('api/v1')->group(function () {
         Route::delete('/media/{asset}', [StudioController::class, 'deleteMedia']);
         Route::get('/settings', [StudioController::class, 'settings']);
         Route::get('/themes', [StudioController::class, 'themes']);
+        Route::post('/themes/packages', [\App\Http\Controllers\ThemePackageController::class, 'upload'])->middleware('throttle:5,1');
         Route::put('/themes', [StudioController::class, 'saveTheme']);
         Route::put('/settings', [StudioController::class, 'saveSettings']);
         Route::get('/users', [StudioController::class, 'users']);

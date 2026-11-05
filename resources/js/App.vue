@@ -5,6 +5,7 @@ import { get, post, remove, failure } from './lib';
 import { activateClientExtensions } from './extensions';
 import { applyPageHead } from './head';
 import PasswordRecovery from './components/PasswordRecovery.vue';
+import { themeStyle as designTokens } from './themes';
 
 const route = useRoute();
 const router = useRouter();
@@ -24,10 +25,8 @@ const colorMode = ref('light');
 try { colorMode.value = localStorage.getItem('fastfind-color-mode') || 'light'; } catch { /* Browser storage is optional. */ }
 function toggleColorMode() { colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('fastfind-color-mode', colorMode.value); } catch { /* Keep the in-memory preference. */ } }
 const publicTheme = computed(() => site.value.theme?.active || 'professional');
-const themeStyle = computed(() => {
-  const settings = site.value.theme?.settings || {};
-  return { '--theme-accent': /^#[a-f\d]{6}$/i.test(settings.accent) ? settings.accent : '#3159d9', '--theme-font': settings.font === 'serif' ? 'Georgia, serif' : 'Inter, ui-sans-serif, system-ui, sans-serif', '--theme-width': settings.width === 'normal' ? '1000px' : '1280px' };
-});
+const publicThemeLayout = computed(() => site.value.theme?.theme?.layout === 'minimal' ? 'minimal' : 'editorial');
+const themeStyle = computed(() => designTokens(site.value.theme?.settings));
 
 function toast(message) { notice.value = message; setTimeout(() => { if (notice.value === message) notice.value = ''; }, 5000); }
 function loadClientExtensions(activeIds = []) {
@@ -96,7 +95,7 @@ onMounted(async () => { await Promise.all([loadUser(), reloadSite()]); await rel
     </main>
   </div>
   <template v-else-if="isStudio"><RouterView :key="route.path" :user="user" @logout="logout" /></template>
-  <div v-else class="public-shell" :data-theme="publicTheme" :style="themeStyle">
+  <div v-else class="public-shell" :data-theme="publicTheme" :data-theme-layout="publicThemeLayout" :style="themeStyle">
     <a class="skip-link" href="#public-main">Skip to content</a>
     <header class="public-header container">
       <RouterLink to="/" class="brand"><span class="brand-mark">✳</span><span>{{ site.brand?.name || 'FastFind' }}<span class="brand-period">.</span></span></RouterLink>

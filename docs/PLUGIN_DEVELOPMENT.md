@@ -92,7 +92,9 @@ The command writes a ZIP and detached metadata in private storage. Upload the ZI
 
 ## Catalog API
 
-`GET /api/v1/studio/plugin-catalog` returns the actual local reviewed source manifests by default, explicitly labeled `source: local`. It is not a launched marketplace. `FASTFIND_PLUGIN_CATALOG_URL` optionally selects an HTTPS metadata catalog with an explicitly allowlisted host in `FASTFIND_PLUGIN_CATALOG_HOSTS`. Private/reserved DNS addresses and redirects are rejected, and the connection pins the checked IP. Remote catalogs cannot grant trust or cause PHP downloads/execution. The v1 response is `{source, name, plugins:[manifest...]}`. Publisher reputation, hosted downloads, reviews, screenshots and remote update installation remain future marketplace work.
+`GET /api/v1/studio/plugin-catalog` retains its metadata-only contract: actual reviewed source manifests by default, explicitly labeled `source: local`, or an optional HTTPS catalog configured through `FASTFIND_PLUGIN_CATALOG_URL`/`FASTFIND_PLUGIN_CATALOG_HOSTS`. The v1 response is `{source, name, plugins:[manifest...]}`. This legacy endpoint does not install releases.
+
+The new [external marketplace](MARKETPLACE.md) uses `/studio/marketplace` and `/studio/marketplace/install` for both themes and plugins. Owners can review and download signed packages from configured hosts; downloads pass through the same `PackageInstaller` as manual uploads and remain inactive until explicitly activated. Catalog records cannot grant publisher trust. Official plugins, including FastFind SEO, use the same developer APIs and package path.
 
 ## Tests
 

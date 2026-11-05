@@ -1,5 +1,12 @@
 # Platform development changelog
 
+## Custom themes, external marketplace and visual builder — 2026-11-04
+
+- Added a shared theme manifest contract for bundled/custom designs, signed data-only ZIP installation, packaging CLI, Aurora example, safe design tokens and audited activation without modifying saved content.
+- Added configurable external catalog/storefront/download hosts, owner review, bounded DNS-pinned HTTPS downloads, signature/digest/manifest checks and explicit activation. Included a standalone static storefront starter; no domain or hosted service is assumed.
+- Added native Visual/Wireframe modes, on-canvas text editing, searchable contextual insertion, a collapsible layer navigator, design controls and shared responsive canvas/preview widths. Existing documents and public plugin registries remain the extension contract.
+- Added package/security, component and browser regressions plus setup/developer documentation. See TEST_EXECUTION_REPORT.md for executed verification and KNOWN_LIMITATIONS.md for scope boundaries.
+
 ## Mail dependency security update — 2026-10-29
 
 - Updated only `symfony/mime` from 7.4.19 to 7.4.22 after CI detected the revised CVE-2026-45070 advisory. Symfony confirms the previously advertised fix was not included in earlier releases; see its [release clarification](https://symfony.com/blog/about-the-security-entries-in-symfony-5-4-55-6-4-49-7-4-22-and-8-1-10).

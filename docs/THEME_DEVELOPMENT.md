@@ -1,65 +1,142 @@
-# FastFind themes
+# Developing and distributing FastFind themes
 
-FastFind currently discovers reviewed local theme manifests from `resources/themes/*/theme.json`. Theme settings affect the public Vue shell and content renderer. They do not modify page documents, revisions or published snapshots, and do not restyle the administration workspace.
+FastFind themes are installable, signed data packages. A theme selects a built-in public layout and safe design tokens; it does not modify saved page documents, revisions or published snapshots. Themes affect the public website. Administration dark mode remains a separate browser preference.
 
-## Available themes
+The shipped Professional and Minimalist themes and third-party packages use the same `App\Themes\ThemeManifest` validator and public renderer. Professional declares `layout: "editorial"`; Minimalist declares `layout: "minimal"`. A new theme can use either layout without adding theme-ID-specific Laravel or frontend code. The independent Aurora example lives at `examples/themes/aurora`.
 
-| ID | Appearance | Defaults |
-| --- | --- | --- |
-| `professional` | Editorial hero artwork, card illustrations and generous spacing | Accent `#3159d9`, sans serif, wide |
-| `minimalist` | Centered introduction, no hero artwork, restrained cards and serif typography | Accent `#33564b`, serif, normal width |
+## Manifest contract
 
-Both themes use the same persisted page content. The `/studio/themes` screen lets authorized owners and administrators select a theme and change its accent, typography and content width. Applying a theme updates the site setting in a database transaction and records an audit event.
-
-## Manifest
+Put `theme.json` at the root of the source directory and ZIP:
 
 ```json
 {
-  "id": "professional",
-  "name": "FastFind Professional",
+  "id": "aurora",
+  "name": "Aurora",
   "version": "1.0.0",
-  "description": "Warm surfaces and an editorial presence.",
+  "description": "A spacious violet and cream design for independent publishers.",
+  "layout": "editorial",
+  "requires": { "fastfind": "^1.0" },
   "defaults": {
-    "accent": "#3159d9",
+    "accent": "#6841a5",
     "font": "sans",
-    "width": "wide"
+    "width": "wide",
+    "background": "#faf7ff",
+    "surface": "#ffffff",
+    "text": "#252034",
+    "muted": "#60546f",
+    "radius": "rounded",
+    "spacing": "relaxed"
   }
 }
 ```
 
-Only three customization tokens are accepted:
+Only the fields above are accepted. `id`, `name`, `version`, `description` and `defaults` are required. IDs match `[a-z][a-z0-9-]{1,79}`: 2–80 characters, beginning with a lowercase letter. Names are nonempty strings up to 100 bytes; descriptions up to 1,000 bytes. Versions are up to 50 bytes and use `major.minor.patch`, optionally followed by a hyphen and a prerelease identifier containing letters, digits, dots or hyphens; build metadata with `+` is unsupported.
 
-- `accent`: a six-digit hexadecimal color beginning with `#`.
-- `font`: `sans` or `serif`.
-- `width`: `normal` or `wide`.
+`layout` accepts `editorial` or `minimal` and defaults to `editorial`. `requires` accepts only a `fastfind` Composer-compatible version constraint and defaults to `{ "fastfind": "^1.0" }`. Compatibility is checked against `plugins.platform_version`; incompatible packages cannot install or activate. `defaults` is an object of the following settings. Omitted tokens receive the common defaults shown below; unknown settings are rejected.
 
-Unknown settings are rejected by the server. Font choices are local font stacks; this implementation does not download remote font resources. Color syntax validation does not guarantee accessible contrast for every user-selected accent, so test contrast when changing a palette.
+| Setting | Accepted values | Common default |
+| --- | --- | --- |
+| `accent` | Six-digit `#RRGGBB` color | `#3159d9` |
+| `background` | Six-digit `#RRGGBB` color | `#f8f9f6` |
+| `surface` | Six-digit `#RRGGBB` color | `#ffffff` |
+| `text` | Six-digit `#RRGGBB` color | `#172431` |
+| `muted` | Six-digit `#RRGGBB` color | `#52665c` |
+| `font` | `sans`, `serif` | `sans` |
+| `width` | `normal`, `wide` | `wide` |
+| `radius` | `square`, `soft`, `rounded` | `soft` |
+| `spacing` | `compact`, `normal`, `relaxed` | `normal` |
 
-`GET /api/v1/studio/themes` returns discovered themes and the selected settings. `PUT /api/v1/studio/themes` accepts `{ "id": "minimalist", "settings": { ... } }`. `GET /api/v1/site` includes the active theme descriptor. The Vue public shell reads that descriptor, sets `data-theme`, and applies the validated `--theme-accent`, `--theme-font` and `--theme-width` CSS variables.
+Fonts use local font stacks. Tokens cannot contain CSS functions, URLs, remote fonts or arbitrary style declarations. The public shell maps validated values to CSS variables through `resources/js/themes.js`; layout selection is generic. Earlier selections containing only accent, font and width continue to work, with the additional defaults filled in.
 
-## Add a reviewed local theme
+## Create and sign a package
 
-1. Add a manifest in a new directory under `resources/themes`. Give it a unique ID and valid defaults.
-2. Add its reviewed stylesheet rules to the source build. Scope them under `.public-shell[data-theme='your-id']`; use the existing content classes and design tokens. Avoid global administration overrides.
-3. Run `npm run build` and the automated tests. Verify homepage, search, each registered layout/block, long content and image behavior at 375, 768, 1280 and 1920 pixels. Include keyboard, focus and contrast checks.
-4. Apply the discovered theme through the Themes screen. Verify that a published page remains published and that an unpublished draft is not exposed by switching themes.
+1. Copy `examples/themes/aurora` to your theme source directory. Choose a unique ID and edit the manifest. Keep the shipped IDs reserved for the application.
+2. Review the design on real content. Check homepage, search, every used block/layout, long text and media at desktop and mobile widths. Check keyboard focus and text contrast for the whole palette; syntax validation does not establish accessibility.
+3. Provision an Ed25519 keypair through your key-management process. The CLI reads a base64-encoded, 64-byte Sodium Ed25519 secret key. Keep it outside the source directory, Git and web root. The receiving operator needs the corresponding base64-encoded, 32-byte public key through an independent trusted channel.
+4. Run the package command from the application directory:
 
-A manifest alone changes only the supported token values. A distinct new design needs its reviewed CSS included in the build. The existing generic page renderer remains responsible for content semantics and safe output.
+```sh
+php artisan fastfind:theme-package examples/themes/aurora --key=/private/signing-key.base64 --publisher=local-reviewed
+```
 
-## Current boundaries
+On the bundled Windows development environment, use the PHP wrapper:
 
-The implemented system is local discovery, selection, safe token configuration, two real public designs and audited activation. The selection cards are design samples, not an isolated live-site preview. There is no ZIP theme installer, marketplace theme downloader, theme-specific Vue component registration API, compatibility solver, automatic update/rollback workflow, arbitrary header/footer editor or remote asset loader yet.
+```powershell
+.\scripts\php.ps1 artisan fastfind:theme-package examples/themes/aurora --key=C:\private\signing-key.base64 --publisher=local-reviewed
+```
 
-Do not place executable PHP or unreviewed JavaScript in a theme package and assume the manifest makes it safe. Any future executable-theme installer must use the same publisher trust, signature, integrity, archive-validation and review controls as server plugins. Current local theme changes should be reviewed and released through source control and the asset build.
+The command validates the manifest and writes a uniquely named ZIP plus a `.zip.json` metadata file to `storage/app/private/theme-packages` (`themes.output_path`). Metadata contains `type`, `id`, `version`, `publisher`, `sha256`, `signature` and `public_key`. The signature is a base64-encoded detached Ed25519 signature over the exact ZIP bytes; `sha256` is its lowercase hexadecimal digest. Changing any ZIP byte requires a new digest and signature. The secret key is never included.
 
-Administration dark mode is a separate preference. It is stored in browser storage as a display choice and does not change the public site's theme or store authentication credentials.
+The ZIP may contain exactly these root files, with exact capitalization:
 
-## Files
+- `theme.json` — required.
+- `README.md` — optional author documentation.
+- `LICENSE.txt` — optional license.
 
-- `resources/themes/professional/theme.json` and `resources/themes/minimalist/theme.json`: shipped descriptors.
-- `app/Services/ThemeManager.php`: discovery, validation, persistence and audit event.
-- `resources/js/views/Themes.vue`: theme selection and settings.
-- `resources/js/App.vue`: public theme application.
-- `resources/scss/platform.scss`: public theme rules, layout styling and separate administration presentation.
+Directories, other filenames, duplicate paths, case variants, traversal/absolute paths, symlinks, special entries and encrypted entries are rejected. Nothing is extracted using archive-supplied paths. The installer reads the allowed files and writes them into its own private release directory. Defaults in `config/themes.php` limit the ZIP to 256 KiB, each expanded file to 64 KiB, and total expanded data to 192 KiB. JSON is decoded with a depth limit of 16.
 
-Consult `TESTING.md` for executed checks. A successful theme build alone is not a claim of WCAG conformance or complete cross-browser coverage.
+## Publisher trust and installation
+
+Theme and plugin installers share the operator-controlled `plugins.publishers` mapping. The default publisher ID `local-reviewed` uses `FASTFIND_PLUGIN_PUBLISHER_KEY` from the environment. Additional publishers must be explicitly provisioned in that mapping. The publisher ID uses the same 2–80-character lowercase slug format as theme IDs.
+
+The public key in package metadata is informational. FastFind does not add it to the trust store automatically, and a catalog cannot grant trust. Verify the publisher identity and key independently before configuring it. A valid signature proves possession of that key; it does not establish design quality or license rights. Rebuild the configuration cache and restart relevant workers after changing operator configuration.
+
+An active owner can upload a ZIP and its publisher, signature and SHA-256 in **Studio → Themes**, or install a listed theme from **Studio → Marketplace**. Installation adds the theme to the library without applying it. An active owner or administrator must select the theme and click **Apply theme**. Editors and viewers cannot activate themes; only owners can install packages.
+
+The design sample in Themes shows the selected palette, typography and corners. It is not an isolated preview of every live page. Applying the theme changes the public site immediately, so inspect the live pages afterward. Stored selection errors or an unavailable/incompatible theme fall back to a validated available design; corrupt overrides fall back to theme defaults. Fallback does not rewrite the stored selection automatically.
+
+## Distribution from a separate marketplace
+
+The CMS can fetch a catalog and ZIP downloads hosted on a separate site. No marketplace domain is embedded in a theme. Operators configure:
+
+```dotenv
+FASTFIND_MARKETPLACE_URL=https://marketplace.example.com/catalog.json
+FASTFIND_MARKETPLACE_SITE_URL=https://marketplace.example.com
+FASTFIND_MARKETPLACE_HOSTS=marketplace.example.com,downloads.example.com
+```
+
+Replace the example domains with your actual site. Catalog, site and package URLs must use HTTPS on approved hosts and port 443. Downloads reject redirects and private/reserved network destinations. An unconfigured marketplace leaves manual signed ZIP installation available.
+
+A schema-version-1 catalog contains `name`, `plugins` and `themes`. A theme entry includes its complete manifest, `publisher`, and `download: { "url": "...", "sha256": "...", "signature": "..." }`. Host the ZIP separately at that URL. Catalog names, IDs, versions and normalized manifests must match the downloaded package; FastFind rechecks identity, digest, trusted signature and archive rules before installation. Only one release per theme ID is listed in a catalog. The website/catalog is a distribution service; purchases, licensing, seller accounts and automatic updates are not supplied by the CMS.
+
+## Upgrades and recovery
+
+An upgrade must have a strictly newer version and the same publisher ID as the installed theme. Packages cannot replace shipped themes. Switch to another theme before installing an upgrade, then explicitly apply the updated theme after inspection. Even a stale saved selection pointing to an unavailable package must be changed first; installing a package cannot silently make that selection active.
+
+Installation and activation share a cache lock, and metadata/audit changes commit in a database transaction. Releases are written to unique directories under `storage/app/private/themes` (`themes.package_path`). Failed installations clean up their incomplete release directory. Successful upgrades retain the previous release files for operator recovery. They do not provide an automatic rollback, downgrade or uninstall command, and old releases are not automatically pruned. Use a shared lock-capable cache for multiple application nodes; multi-node deployment needs separate validation.
+
+Before upgrading, take a coordinated backup of:
+
+- The database, including `site_settings.theme` and `site_settings.theme_packages`, plus page content and audit records.
+- The entire configured private theme package directory, including prior releases. Registry records contain release paths, so preserve or deliberately reconcile those paths during recovery.
+- The corresponding application release, operator publisher configuration, original signed ZIPs and signature metadata.
+- The existing application key, environment configuration and media through the normal protected backup process. Signing private keys belong in a separate protected key backup, never in theme ZIPs.
+
+The built-in `fastfind:backup` command captures SQLite and public media. **It does not copy installed private theme release files, application source, environment configuration or signing keys.** Back up those separately. Restore into a separate deployment, check theme selection, content/publication state and package provenance, and use a controlled cutover. Retained release directories alone are not a complete backup or a supported database rollback. See [backup and restoration](BACKUP_RESTORE.md).
+
+## APIs and extension boundaries
+
+| API | Purpose |
+| --- | --- |
+| `ThemeManifest::read(string $path): array` | Read and validate a bounded manifest. |
+| `ThemeManifest::validate(array $manifest): array` | Validate/normalize the shared shipped, package and catalog contract. |
+| `ThemeManifest::issues(array $validatedManifest): array` | Report platform compatibility issues. |
+| `ThemeManifest::settings(array $defaults, array $overrides = []): array` | Validate and fill supported design tokens. |
+| `ThemePackageInstaller::install(string $archive, string $publisher, string $signature, string $sha256, int $actor): array` | Verify/install a package for an authorized owner. |
+| `ThemeManager::all()`, `current()`, `activate(...)` | List installed designs, resolve current design, and apply a selection. |
+
+`GET /api/v1/studio/themes` returns installed themes and current settings to owners/administrators. `POST /api/v1/studio/themes/packages` accepts multipart `file`, `publisher`, `signature`, `sha256` for owners and returns `{ "theme": ... }` with HTTP 201. `PUT /api/v1/studio/themes` accepts `{ "id": "aurora", "settings": { ... } }` for owners/administrators. Browser requests use the normal authenticated session and CSRF protection. `GET /api/v1/site` exposes the current public descriptor without private release paths.
+
+Installed descriptors add `source` (`bundled` or `package`), `publisher` and `installed` to the manifest. Package metadata is persisted in the `theme_packages` site setting; the current ID and validated overrides are in `theme`. Audit actions are `theme.installed`, `theme.upgraded`, `theme.package_rejected` and `theme.activated`.
+
+This theme API does not accept PHP, JavaScript, CSS, images, SVG, custom fonts, Vue components, arbitrary HTML templates or remote asset URLs. A theme composes the two existing layout families and supported tokens. New rendering primitives require an application/extension API change reviewed and shipped with the renderer, rather than executable code in a theme ZIP. There is no WordPress or Divi package compatibility. Theme switching leaves page-builder content intact.
+
+## Verification
+
+`ThemePackageTest` uses real ZIP files and Ed25519 signatures to cover installation, CLI packaging, upload/service authorization, archive and manifest rejection, inactive upgrades, previous-release retention, safe fallback and unchanged content. Run the focused checks with an isolated test database:
+
+```sh
+php artisan test --compact --filter='ThemePackageTest|theme_switch'
+```
+
+See [testing guidance](TESTING.md) for the full suite and browser verification. Check your actual theme on representative content and supported browsers before publishing its package.

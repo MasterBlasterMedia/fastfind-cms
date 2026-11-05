@@ -14,11 +14,11 @@ This document describes the final implemented scope. Earlier baseline audit file
 ## Extensions and themes
 
 - Plugins run trusted PHP with the application's privileges. Capability declarations are API checks, not a process sandbox. A trusted publisher can ship dangerous code; signatures establish integrity/provenance, not safety.
-- Reviewed local plugin installation and signed ZIP installation are implemented. The catalog fetches metadata only; hosted marketplace infrastructure, moderation, reviews, billing, automatic downloads/updates and rollback orchestration are not implemented.
+- Reviewed local installation, signed ZIP uploads and owner-requested downloads from a configured external marketplace are implemented for plugins/themes. A separate static storefront starter is included. No production marketplace is hosted; moderation, reviews, billing/licensing, seller accounts, automatic updates and rollback orchestration are not implemented.
 - Browser modules are compiled by Vite from reviewed `plugins/**/resources/admin.js`. Uploaded server packages do not automatically inject new JavaScript; operators must review/copy client sources and rebuild. There is no runtime remote-code loader.
 - PHP class loading requires request-scoped PHP. Octane/RoadRunner/Swoole are unsupported; restart long-running workers on code changes. Upgrades require deactivation; database DDL may need manual recovery after failure.
 - Deactivation preserves namespaced fields. Documents containing custom plugin blocks/layouts need the plugin re-enabled or those blocks removed before saving. Public rendering shows an unavailable-component fallback.
-- Themes are reviewed local data manifests plus compiled styling. Two themes are included. Executable uploaded theme packages, template override DSL, downloadable theme marketplace and arbitrary user CSS are not implemented.
+- Themes are data manifests interpreted by the same renderer for bundled and signed custom ZIP packages. Two designs and an Aurora example are included. Custom palettes, font stacks, width, corners, spacing and two layout presets are supported. Executable theme files, arbitrary CSS/HTML/JS, remote fonts/assets, theme-specific Vue components and header/footer template editing are not supported. Design samples are not an isolated live-site preview.
 
 ## Accounts and operations
 
